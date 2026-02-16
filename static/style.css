@@ -1,0 +1,92 @@
+/* Estilo general inspirado en Suscripto */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    display: flex; /* Para el menú lateral [cite: 160] */
+    background-color: #f4f7f6;
+    height: 100vh;
+}
+
+/* Menú Lateral [cite: 33, 160] */
+.sidebar {
+    width: 200px;
+    background-color: white;
+    border-right: 1px solid #ddd;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sidebar h2 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Área Principal [cite: 160] */
+.main-content {
+    flex-grow: 1;
+    padding: 40px;
+    overflow-y: auto;
+    text-align: center;
+}
+
+/* El círculo del gasto mensual [cite: 31, 36] */
+.total-display {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+/* Filas de Suscripciones [cite: 30, 46] */
+.lista {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    margin-bottom: 12px;
+    border-radius: 15px; /* Bordes redondeados del PDF  */
+    color: white;
+    font-size: 1.2rem;
+    transition: transform 0.2s;
+}
+
+.item:hover {
+    transform: scale(1.02);
+}
+
+/* Colores dinámicos por tipo (puedes personalizarlos)  */
+.item-netflix { background: linear-gradient(90deg, #E50914, #b20710); }
+.item-spotify { background: linear-gradient(90deg, #1DB954, #191414); }
+.item-prime { background: linear-gradient(90deg, #00A8E1, #007eb9); }
+.item-default { background: linear-gradient(90deg, #444, #222); }
+
+/* Formulario de añadir [cite: 32] */
+.form-container {
+    margin-top: 40px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    display: inline-block;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+input, button {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin: 5px;
+}
+
+button {
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+}
