@@ -1,15 +1,15 @@
-/* Estilo general inspirado en Suscripto */
+/* --- ESTILOS GENERALES (Tu código original) --- */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    display: flex; /* Para el menú lateral [cite: 160] */
+    display: flex;
     background-color: #f4f7f6;
     height: 100vh;
 }
 
-/* Menú Lateral [cite: 33, 160] */
+/* --- MENÚ LATERAL --- */
 .sidebar {
-    width: 200px;
+    width: 250px; /* Un poco más ancho para que quepa bien el texto */
     background-color: white;
     border-right: 1px solid #ddd;
     padding: 20px;
@@ -19,12 +19,45 @@ body {
 }
 
 .sidebar h2 {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     color: #333;
     margin-bottom: 20px;
+    text-align: center;
+    letter-spacing: 2px;
 }
 
-/* Área Principal [cite: 160] */
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar li {
+    margin-bottom: 15px;
+}
+
+.sidebar a {
+    text-decoration: none;
+    color: #555;
+    font-size: 1.1rem;
+    display: block;
+    padding: 10px;
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #f0f0f0;
+    color: #000;
+}
+
+/* Clase para resaltar la pestaña activa */
+.sidebar a.active {
+    background-color: #333;
+    color: white;
+    font-weight: bold;
+}
+
+/* --- ÁREA PRINCIPAL --- */
 .main-content {
     flex-grow: 1;
     padding: 40px;
@@ -32,7 +65,7 @@ body {
     text-align: center;
 }
 
-/* El círculo del gasto mensual [cite: 31, 36] */
+/* Dashboard: Total y Lista */
 .total-display {
     font-size: 3rem;
     font-weight: bold;
@@ -40,7 +73,6 @@ body {
     color: #333;
 }
 
-/* Filas de Suscripciones [cite: 30, 46] */
 .lista {
     max-width: 800px;
     margin: 0 auto;
@@ -52,23 +84,25 @@ body {
     align-items: center;
     padding: 15px 30px;
     margin-bottom: 12px;
-    border-radius: 15px; /* Bordes redondeados del PDF  */
+    border-radius: 15px;
     color: white;
     font-size: 1.2rem;
     transition: transform 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-.item:hover {
-    transform: scale(1.02);
-}
+.item:hover { transform: scale(1.02); }
 
-/* Colores dinámicos por tipo (puedes personalizarlos)  */
+/* Colores dinámicos */
 .item-netflix { background: linear-gradient(90deg, #E50914, #b20710); }
 .item-spotify { background: linear-gradient(90deg, #1DB954, #191414); }
 .item-prime { background: linear-gradient(90deg, #00A8E1, #007eb9); }
+.item-disney { background: linear-gradient(90deg, #113CCF, #000); }
+.item-hbo { background: linear-gradient(90deg, #530575, #000); }
+.item-playstation { background: linear-gradient(90deg, #00439c, #000); }
 .item-default { background: linear-gradient(90deg, #444, #222); }
 
-/* Formulario de añadir [cite: 32] */
+/* Formulario */
 .form-container {
     margin-top: 40px;
     background: white;
@@ -78,7 +112,7 @@ body {
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-input, button {
+input, button, select {
     padding: 10px;
     border-radius: 5px;
     border: 1px solid #ccc;
@@ -89,4 +123,128 @@ button {
     background-color: #333;
     color: white;
     cursor: pointer;
+    font-weight: bold;
 }
+
+/* --- NUEVOS ESTILOS: CALENDARIO --- */
+.calendar-container {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.day-header {
+    font-weight: bold;
+    color: #666;
+    padding-bottom: 10px;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.day-cell {
+    min-height: 100px;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    padding: 5px;
+    background: #fafafa;
+    text-align: left;
+}
+
+.day-number {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+    display: block;
+    padding-left: 5px;
+}
+
+.event-marker {
+    font-size: 0.75rem;
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* --- NUEVOS ESTILOS: AHORRO --- */
+.savings-summary {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.card-box {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    width: 40%;
+    min-width: 300px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+/* --- NUEVOS ESTILOS: AJUSTES --- */
+.settings-section {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    text-align: left;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #f9f9f9;
+}
+
+/* Interruptor (Toggle Switch) */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px; width: 20px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .slider { background-color: #2196F3; }
+input:checked + .slider:before { transform: translateX(24px); }
