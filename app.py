@@ -1,112 +1,84 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-import calendar
 
 app = Flask(__name__)
 
-# --- CONFIGURACIÓN DE LA BASE DE DATOS ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///suscripto.db'
+# Configuración de la base de datos (se creará un archivo llamado suscripciones.db)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///suscripciones.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
-# --- MODELO DE DATOS ---
+# ---------------------------------------------------------
+# MODELO DE BASE DE DATOS
+# ---------------------------------------------------------
 class Suscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     precio = db.Column(db.Float, nullable=False)
-    # Se asume que guardas solo el día (ej: "15") o una fecha que manejas luego
-    fecha_pago = db.Column(db.String(20)) 
+    fecha_cobro = db.Column(db.String(20), nullable=False)
 
-# --- RUTA 1: INICIO / DASHBOARD ---
-@app.route('/')
-def index():
-    # Aseguramos que las tablas existan al entrar
+# Esto crea el archivo de la base de datos la primera vez que ejecutas el programa
+with app.app_context():
     db.create_all()
-    
-    suscripciones = Suscripcion.query.all()
-    total = sum(s.precio for s in suscripciones)
-    return render_template('index.html', lista=suscripciones, total=total, active_page='index')
 
-# --- RUTA 2: AÑADIR SUSCRIPCIÓN ---
-@app.route('/add', methods=['POST'])
-def add():
-    try:
-        nueva = Suscripcion(
-            nombre=request.form['nombre'],
-            precio=float(request.form['precio']),
-            fecha_pago=request.form['fecha']
+# ---------------------------------------------------------
+# RUTAS DE LA PÁGINA WEB
+# ---------------------------------------------------------
+
+# RUTA PRINCIPAL (Inicio) -> Ojo aquí al methods=['GET', 'POST']
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    # Si el usuario le ha dado al botón de "AÑADIR NUEVA" (POST)
+    if request.method == 'POST':
+        # 1. Cogemos los datos que ha escrito en el formulario
+        nombre_sub = request.form['nombre']
+        precio_sub = request.form['precio']
+        fecha_sub = request.form['fecha_cobro']
+        
+        # 2. Preparamos los datos para la base de datos
+        nueva_suscripcion = Suscripcion(
+            nombre=nombre_sub, 
+            precio=float(precio_sub), 
+            fecha_cobro=fecha_sub
         )
-        db.session.add(nueva)
+        
+        # 3. Lo guardamos permanentemente
+        db.session.add(nueva_suscripcion)
         db.session.commit()
-    except Exception as e:
-        print(f"Error al añadir: {e}")
-    return redirect(url_for('index'))
+        
+        # 4. Recargamos la página de inicio para que aparezca en la lista
+        return redirect(url_for('index'))
+    
+    # Si el usuario solo está entrando a la web normalmente (GET)
+    # 1. Pedimos a la base de datos TODAS las suscripciones guardadas
+    suscripciones = Suscripcion.query.all()
+    
+    # 2. Calculamos el dinero total gastado y lo redondeamos a 2 decimales
+    total = sum(sub.precio for sub in suscripciones)
+    total_redondeado = round(total, 2)
+    
+    # 3. Enviamos los datos al diseño HTML
+    return render_template('index.html', suscripciones=suscripciones, total_gastado=total_redondeado)
 
-# --- RUTA 3: CALENDARIO ---
+# RUTA CALENDARIO
 @app.route('/calendario')
 def calendario():
-    ahora = datetime.now()
-    year = ahora.year
-    month = ahora.month
-    
-    # Generar la matriz del calendario
-    cal = calendar.monthcalendar(year, month)
-    
-    # Nombres de meses en español
-    nombres_meses = {
-        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
-        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
-        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
-    }
-    nombre_mes = nombres_meses.get(month, "Mes Desconocido")
-    
-    suscripciones = Suscripcion.query.all()
-    
-    # Organizar eventos por día
-    eventos = {}
-    for s in suscripciones:
-        if s.fecha_pago:
-            try:
-                # Intentamos convertir a entero por si guardaste solo el día "5"
-                dia = int(s.fecha_pago)
-                if dia not in eventos:
-                    eventos[dia] = []
-                eventos[dia].append(s)
-            except ValueError:
-                # Si la fecha no es un número simple, se ignora para evitar error 500
-                pass
+    return render_template('calendario.html')
 
-    return render_template('calendario.html', 
-                           calendario=cal, 
-                           mes=nombre_mes, 
-                           anio=year, 
-                           eventos=eventos, 
-                           active_page='calendario')
-
-# --- RUTA 4: AHORRO ---
+# RUTA AHORRO
 @app.route('/ahorro')
 def ahorro():
-    suscripciones = Suscripcion.query.all()
-    total = sum(s.precio for s in suscripciones)
-    
-    # Listas para pasar a las gráficas (Chart.js u otra librería)
-    labels = [s.nombre for s in suscripciones]
-    data = [s.precio for s in suscripciones]
-    
-    return render_template('ahorro.html', 
-                           total=total, 
-                           labels=labels, 
-                           data=data,
-                           active_page='ahorro')
+    return render_template('ahorro.html')
 
-# --- RUTA 5: AJUSTES ---
+# RUTA AJUSTES
 @app.route('/ajustes')
 def ajustes():
-    return render_template('ajustes.html', active_page='ajustes')
+    return render_template('ajustes.html')
 
-# --- ARRANQUE DE LA APP ---
+# ---------------------------------------------------------
+# INICIO DEL SERVIDOR
+# ---------------------------------------------------------
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+    # debug=True hace que los cambios se actualicen solos sin tener que apagar el servidor
     app.run(debug=True)

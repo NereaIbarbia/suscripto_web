@@ -5,59 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suscripto - Inicio</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="app-container">
+        
+        <aside class="sidebar">
+            <h1 class="logo">SUSCRIPTO</h1>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item active"><a href="/">🏠 Inicio</a></li>
+                    <li class="nav-item"><a href="/calendario">📅 Calendario</a></li>
+                    <li class="nav-item"><a href="/ahorro">🐷 Ahorros</a></li>
+                    <li class="nav-item"><a href="/ajustes">⚙️ Ajustes</a></li>
+                </ul>
+            </nav>
+        </aside>
 
-    <div class="sidebar">
-        <h2>SUSCRIPTO</h2>
-        <nav>
-            <ul>
-                <li><a href="/" class="{{ 'active' if active_page == 'index' else '' }}">🏠 Dashboard</a></li>
-                <li><a href="/calendario" class="{{ 'active' if active_page == 'calendario' else '' }}">📅 Calendario</a></li>
-                <li><a href="/ahorro" class="{{ 'active' if active_page == 'ahorro' else '' }}">💰 Ahorro</a></li>
-                <li><a href="/ajustes" class="{{ 'active' if active_page == 'ajustes' else '' }}">⚙️ Ajustes</a></li>
-            </ul>
-        </nav>
+        <main class="main-content">
+            
+            <section class="card text-center">
+                <h3 class="card-subtitle">Gastos Este Mes</h3>
+                <h2 class="total-price">{{ total_gastado }} €</h2>
+                <p class="text-muted">Total calculado de tus suscripciones activas</p>
+            </section>
+
+            <section class="card">
+                <h3 class="card-title">AÑADIR NUEVA</h3>
+                <form action="/" method="POST" class="add-form">
+                    <input type="text" name="nombre" placeholder="Suscripción (Ej: Netflix)" required class="form-input">
+                    <input type="number" name="precio" step="0.01" placeholder="Precio (Ej: 13.99)" required class="form-input">
+                    <input type="date" name="fecha_cobro" required class="form-input">
+                    <button type="submit" class="btn-success">➕ AÑADIR NUEVA</button>
+                </form>
+            </section>
+
+            <section class="card">
+                {% if suscripciones %}
+                    <div class="subs-list">
+                        {% for sub in suscripciones %}
+                        <div class="sub-item">
+                            <span class="sub-name">📺 {{ sub.nombre }}</span>
+                            <span class="sub-price">{{ sub.precio }} €</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state text-center">
+                        <span class="empty-icon">📁</span>
+                        <p>Aún no tienes suscripciones añadidas. ¡Añade la primera arriba!</p>
+                    </div>
+                {% endif %}
+            </section>
+
+        </main>
     </div>
-
-    <div class="main-content">
-        <header>
-            <h1>Tus suscripciones bajo control</h1>
-            <p>Resumen de gastos mensuales</p>
-        </header>
-
-        <div class="total-container">
-            <div class="total-display">
-                <span class="amount">{{ "%.2f"|format(total) }} €</span>
-                <br>
-                <span style="font-size: 1rem; color: #666; font-weight: normal;">Mensuales</span>
-            </div>
-        </div>
-
-        <div class="lista">
-            {% for s in lista %}
-            <div class="item item-{{ s.nombre.lower() if s.nombre.lower() in ['netflix', 'spotify', 'prime', 'disney', 'hbo', 'playstation'] else 'default' }}">
-                <div class="item-info">
-                    <strong>{{ s.nombre }}</strong>
-                    <span style="display:block; font-size: 0.8rem; opacity: 0.8;">Cobro el día {{ s.fecha_pago }}</span>
-                </div>
-                <div class="item-price">
-                    {{ "%.2f"|format(s.precio) }} €
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="form-container">
-            <h3>+ Añadir nueva suscripción</h3>
-            <form action="/add" method="POST">
-                <input type="text" name="nombre" placeholder="Nombre (ej: Netflix)" required>
-                <input type="number" step="0.01" name="precio" placeholder="Precio (ej: 12.99)" required>
-                <input type="number" name="fecha" placeholder="Día (1-31)" min="1" max="31" required>
-                <button type="submit">Guardar</button>
-            </form>
-        </div>
-    </div>
-
 </body>
 </html>
