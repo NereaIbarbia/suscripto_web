@@ -6,59 +6,68 @@
     <title>Suscripto - Ahorros</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <h1 class="logo">SUSCRIPTO</h1>
+    <div class="app-container" style="display: flex; height: 100vh; background-color: #f4f6f8;">
+        <aside class="sidebar" style="width: 250px; background-color: #2c3e50; color: white; display: flex; flex-direction: column; padding-top: 2rem;">
+            <h1 style="text-align: center; font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 3rem;">SUSCRIPTO</h1>
             <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item"><a href="/">🏠 Inicio</a></li>
-                    <li class="nav-item"><a href="/calendario">📅 Calendario</a></li>
-                    <li class="nav-item active"><a href="/ahorro">🐷 Ahorros</a></li>
-                    <li class="nav-item"><a href="/ajustes">⚙️ Ajustes</a></li>
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <li><a href="/" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🏠 Inicio</a></li>
+                    <li><a href="/calendario" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">📅 Calendario</a></li>
+                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/ahorro" style="text-decoration: none; color: #4CAF50; font-weight: 600; padding: 1rem 2rem; display: block;">🐷 Ahorros</a></li>
+                    <li><a href="/ajustes" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">⚙️ Ajustes</a></li>
                 </ul>
             </nav>
         </aside>
 
-        <main class="main-content">
-            <h2 class="section-title text-center">RESUMEN DE AHORRO</h2>
-            
-            <div class="dashboard-grid">
-                <div class="card text-center">
-                    <h3 class="card-subtitle">Este mes:</h3>
-                    <h2 class="total-price">188 €</h2>
-                    <p class="text-success" style="color: #27ae60; font-weight: 600; margin-top: 1rem;">⬇ Gastado menos que el mes anterior (-15 €)</p>
+        <main style="flex: 1; padding: 2.5rem; overflow-y: auto;">
+            <h2 style="text-align: center; margin-bottom: 2rem; color: #2c3e50;">RESUMEN DE GASTOS</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div style="background: white; padding: 2.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <h3 style="color: #777; margin-bottom: 1rem;">Gasto Mensual Total</h3>
+                    <h2 style="font-size: 3.5rem; color: #2c3e50;">{{ total_gastado }} €</h2>
+                    <p style="color: #27ae60; margin-top: 1rem; font-weight: 600;">✓ Datos actualizados</p>
                 </div>
 
-                <div class="card text-center">
-                    <h3 class="card-subtitle">Gasto por Suscripción (%)</h3>
-                    <div class="chart-container">
-                        <div class="pie-chart"></div>
-                        <div class="chart-leyend">
-                            <span style="color:#c0392b">■ Netflix</span>
-                            <span style="color:#27ae60">■ Spotify</span>
-                            <span style="color:#2980b9">■ PlayStation</span>
-                            <span style="color:#3498db">■ Prime</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mt-2">
-                <h3 class="card-title">Consejos de Ahorro e Inversión</h3>
-                <div class="tips-grid">
-                    <div class="tip-box">
-                        <p><strong>1) Suscripción no rentable:</strong> Revista Online (Poco uso). Cancelar ahorraría 10€/mes.</p>
-                        <button class="btn-grey">Ver Detalles</button>
-                    </div>
-                    <div class="tip-box">
-                        <p><strong>2) Oferta disponible:</strong> Spotify Plan Anual (Ahorra 20€ al año).</p>
-                        <button class="btn-grey">Ir a la Oferta</button>
+                <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center;">
+                    <h3 style="margin-bottom: 1.5rem; color: #555;">Distribución por Suscripción</h3>
+                    <div style="width: 100%; max-width: 280px;">
+                        <canvas id="miGrafica"></canvas>
                     </div>
                 </div>
             </div>
         </main>
     </div>
+
+    <script>
+        // Carga automática y limpia desde Flask hacia JavaScript
+        const etiquetas = {{ suscripciones|map(attribute='nombre')|list|tojson }};
+        const valores = {{ suscripciones|map(attribute='precio')|list|tojson }};
+
+        // Si hay datos para mostrar, generamos la gráfica
+        if (etiquetas && etiquetas.length > 0) {
+            const ctx = document.getElementById('miGrafica').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: etiquetas,
+                    datasets: [{
+                        data: valores,
+                        backgroundColor: ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'],
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    </script>
 </body>
 </html>

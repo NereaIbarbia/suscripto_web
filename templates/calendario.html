@@ -2,123 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suscripto - Calendario</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <h1 class="logo">SUSCRIPTO</h1>
+    <div class="app-container" style="display: flex; height: 100vh; overflow: hidden; background-color: #f4f6f8;">
+        <aside class="sidebar" style="width: 250px; background-color: #2c3e50; color: white; display: flex; flex-direction: column; padding-top: 2rem;">
+            <h1 style="text-align: center; font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 3rem;">SUSCRIPTO</h1>
             <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item"><a href="/">🏠 Inicio</a></li>
-                    <li class="nav-item active"><a href="/calendario">📅 Calendario</a></li>
-                    <li class="nav-item"><a href="/ahorro">🐷 Ahorros</a></li>
-                    <li class="nav-item"><a href="/ajustes">⚙️ Ajustes</a></li>
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <li><a href="/" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🏠 Inicio</a></li>
+                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/calendario" style="text-decoration: none; color: #4CAF50; font-weight: 600; padding: 1rem 2rem; display: block;">📅 Calendario</a></li>
+                    <li><a href="/ahorro" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🐷 Ahorros</a></li>
+                    <li><a href="/ajustes" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">⚙️ Ajustes</a></li>
                 </ul>
             </nav>
         </aside>
 
-        <main class="main-content">
-            <div class="calendar-header">
-                <div class="calendar-selects">
-                    <div class="select-group">
-                        <label>Mes</label>
-                        <select class="form-input" id="mesSelect">
-                            <option value="0">Enero</option>
-                            <option value="1">Febrero</option>
-                            <option value="2">Marzo</option>
-                            <option value="3">Abril</option>
-                            <option value="4">Mayo</option>
-                            <option value="5">Junio</option>
-                            <option value="6">Julio</option>
-                            <option value="7">Agosto</option>
-                            <option value="8">Septiembre</option>
-                            <option value="9">Octubre</option>
-                            <option value="10">Noviembre</option>
-                            <option value="11">Diciembre</option>
-                        </select>
-                    </div>
-                    <div class="select-group">
-                        <label>Año</label>
-                        <select class="form-input" id="anioSelect">
-                            <option value="2024">2024</option>
-                            <option value="2025">2025</option>
-                            <option value="2026">2026</option>
-                            <option value="2027">2027</option>
-                        </select>
-                    </div>
+        <main style="flex: 1; padding: 2.5rem; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="color: #2c3e50;">Calendario Personalizado</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="mesSelect" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ddd;"></select>
+                    <select id="anioSelect" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ddd;"></select>
                 </div>
-                <button class="btn-success btn-small">➕ AÑADIR NUEVA</button>
             </div>
 
-            <div class="card p-0">
-                <div class="calendar-grid" id="calendarioGrid"></div>
+            <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden;">
+                <div id="calendarioGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); width: 100%;">
+                    </div>
             </div>
         </main>
     </div>
 
     <script>
+        // EXTRAEMOS LA FECHA COMPLETA (AÑO, MES Y DÍA)
+        const suscripcionesReales = [
+            {% for sub in suscripciones %}
+            { 
+                "nombre": {{ sub.nombre|tojson }}, 
+                "precio": {{ sub.precio }}, 
+                // Extraemos el Año (Ej: 2026)
+                "anio": parseInt("{{ sub.fecha_cobro }}".substring(0, 4), 10),
+                // Extraemos el Mes (Restamos 1 porque en JavaScript Enero es el mes 0 y Diciembre el 11)
+                "mes": parseInt("{{ sub.fecha_cobro }}".substring(5, 7), 10) - 1,
+                // Extraemos el Día (Ej: 15)
+                "dia": parseInt("{{ sub.fecha_cobro }}".substring(8, 10), 10),
+                "color": "{{ get_color(sub.nombre) }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const grid = document.getElementById('calendarioGrid');
         const mesSelect = document.getElementById('mesSelect');
         const anioSelect = document.getElementById('anioSelect');
-        const grid = document.getElementById('calendarioGrid');
-        const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-        // Datos visuales de prueba para que veas cómo queda
-        const suscripcionesPrueba = {
-            15: { nombre: 'Netflix', precio: '13.99', clase: 'netflix' },
-            27: { nombre: 'Prime', precio: '4.99', clase: 'prime' }
-        };
+        function cargarSelects() {
+            nombresMeses.forEach((m, i) => mesSelect.innerHTML += `<option value="${i}">${m}</option>`);
+            // Mostrar desde el año pasado hasta 3 años en el futuro
+            const anioActual = new Date().getFullYear();
+            for(let a = anioActual - 1; a <= anioActual + 3; a++) {
+                anioSelect.innerHTML += `<option value="${a}">${a}</option>`;
+            }
+            // Poner por defecto el mes y año en el que estamos hoy
+            mesSelect.value = new Date().getMonth();
+            anioSelect.value = anioActual;
+        }
 
-        function generarCalendario() {
-            const mes = parseInt(mesSelect.value);
-            const anio = parseInt(anioSelect.value);
-            grid.innerHTML = ''; // Limpiar el calendario actual
+        function dibujar() {
+            grid.innerHTML = '';
+            const m = parseInt(mesSelect.value); // Mes seleccionado en pantalla
+            const a = parseInt(anioSelect.value); // Año seleccionado en pantalla
 
-            // 1. Añadir las cabeceras de los días (Lunes a Domingo)
-            diasSemana.forEach(dia => {
-                grid.innerHTML += `<div class="weekday">${dia}</div>`;
+            ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(d => {
+                grid.innerHTML += `<div style="text-align:center; padding:12px; background:#f8f9fa; font-weight:700; border-bottom:2px solid #eee; border-right:1px solid #eee;">${d}</div>`;
             });
 
-            // 2. Calcular qué día de la semana cae el día 1 del mes
-            let fechaPrimerDia = new Date(anio, mes, 1);
-            let diaSemanaInicio = fechaPrimerDia.getDay();
-            // Ajustar para que Lunes sea 0 y Domingo 6 (JavaScript por defecto hace Domingo = 0)
-            diaSemanaInicio = diaSemanaInicio === 0 ? 6 : diaSemanaInicio - 1;
+            let inicio = new Date(a, m, 1).getDay();
+            inicio = (inicio === 0) ? 6 : inicio - 1; 
+            const totalDias = new Date(a, m + 1, 0).getDate();
 
-            // 3. Calcular cuántos días tiene el mes exacto (esto gestiona bisiestos automáticamente)
-            const diasTotales = new Date(anio, mes + 1, 0).getDate();
-
-            // 4. Crear cajas vacías hasta llegar al día 1
-            for (let i = 0; i < diaSemanaInicio; i++) {
-                grid.innerHTML += `<div class="day" style="background-color: #f9f9f9; border-color: transparent;"></div>`;
+            for(let i=0; i<inicio; i++) {
+                grid.innerHTML += `<div style="min-height:100px; border-right:1px solid #eee; border-bottom:1px solid #eee; background:#fafafa;"></div>`;
             }
 
-            // 5. Rellenar los días del mes
-            for (let dia = 1; dia <= diasTotales; dia++) {
-                let contenidoHtml = `${dia}`;
+            for(let d=1; d<=totalDias; d++) {
+                let htmlDia = `<div style="min-height:100px; border-right:1px solid #eee; border-bottom:1px solid #eee; padding:8px; display:flex; flex-direction:column;">
+                    <span style="font-weight:700; color:#555;">${d}</span>`;
                 
-                // Si coincide que hay una suscripción este día, pintarla
-                if (suscripcionesPrueba[dia]) {
-                    let sub = suscripcionesPrueba[dia];
-                    contenidoHtml += `<div class="event-pill ${sub.clase}">${sub.nombre}<br>${sub.precio} €</div>`;
-                }
-
-                grid.innerHTML += `<div class="day">${contenidoHtml}</div>`;
+                suscripcionesReales.forEach(sub => {
+                    // LA MAGIA ESTÁ AQUÍ: Solo dibujamos si coinciden Día, Mes Y Año.
+                    if(sub.dia === d && sub.mes === m && sub.anio === a) {
+                        htmlDia += `<div style="background:${sub.color}; color:white; font-size:0.75rem; padding:4px; border-radius:4px; margin-top:5px; text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            ${sub.nombre} <br> ${sub.precio}€
+                        </div>`;
+                    }
+                });
+                
+                htmlDia += `</div>`;
+                grid.innerHTML += htmlDia;
             }
         }
 
-        // Cada vez que cambies el desplegable de mes o año, se recalcula solo
-        mesSelect.addEventListener('change', generarCalendario);
-        anioSelect.addEventListener('change', generarCalendario);
-
-        // Al abrir la página, poner el mes y año en el que estamos actualmente y generar
-        const hoy = new Date();
-        mesSelect.value = hoy.getMonth(); 
-        anioSelect.value = hoy.getFullYear();
-        generarCalendario();
+        cargarSelects();
+        dibujar();
+        mesSelect.onchange = dibujar;
+        anioSelect.onchange = dibujar;
     </script>
 </body>
 </html>

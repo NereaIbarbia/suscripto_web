@@ -3,82 +3,74 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# Configuración de la base de datos (se creará un archivo llamado suscripciones.db)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///suscripciones.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 db = SQLAlchemy(app)
 
-# ---------------------------------------------------------
-# MODELO DE BASE DE DATOS
-# ---------------------------------------------------------
 class Suscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     precio = db.Column(db.Float, nullable=False)
-    fecha_cobro = db.Column(db.String(20), nullable=False)
+    # AHORA LA FECHA ES UN TEXTO (String) PARA GUARDAR "YYYY-MM-DD"
+    fecha_cobro = db.Column(db.String(20), nullable=False) 
 
-# Esto crea el archivo de la base de datos la primera vez que ejecutas el programa
 with app.app_context():
     db.create_all()
 
-# ---------------------------------------------------------
-# RUTAS DE LA PÁGINA WEB
-# ---------------------------------------------------------
+# --- MAGIA DE COLORES ---
+# Esta función detecta la palabra y devuelve su color oficial
+def obtener_color(nombre):
+    n = nombre.lower()
+    if 'netflix' in n: return '#e50914' # Rojo Netflix
+    if 'prime' in n or 'amazon' in n: return '#00a8e1' # Azul Prime
+    if 'spotify' in n: return '#1db954' # Verde Spotify
+    if 'hbo' in n or 'max' in n: return '#5a2e98' # Morado HBO
+    if 'disney' in n: return '#113ccf' # Azul oscuro Disney
+    if 'youtube' in n: return '#ff0000' # Rojo YouTube
+    if 'apple' in n: return '#000000' # Negro Apple
+    if 'playstation' in n or 'psn' in n: return '#003791' # Azul PS
+    if 'xbox' in n: return '#107c10' # Verde Xbox
+    if 'gimnasio' in n or 'gym' in n: return '#e67e22' # Naranja
+    return '#34495e' # Color por defecto (Gris oscuro elegante)
 
-# RUTA PRINCIPAL (Inicio) -> Ojo aquí al methods=['GET', 'POST']
+# --- RUTAS ---
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    # Si el usuario le ha dado al botón de "AÑADIR NUEVA" (POST)
     if request.method == 'POST':
-        # 1. Cogemos los datos que ha escrito en el formulario
-        nombre_sub = request.form['nombre']
-        precio_sub = request.form['precio']
-        fecha_sub = request.form['fecha_cobro']
+        nombre = request.form.get('nombre')
+        precio = request.form.get('precio')
+        fecha = request.form.get('fecha_cobro') # Ahora recibe la fecha completa del calendario HTML
         
-        # 2. Preparamos los datos para la base de datos
-        nueva_suscripcion = Suscripcion(
-            nombre=nombre_sub, 
-            precio=float(precio_sub), 
-            fecha_cobro=fecha_sub
-        )
-        
-        # 3. Lo guardamos permanentemente
-        db.session.add(nueva_suscripcion)
+        nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha)
+        db.session.add(nueva_sub)
         db.session.commit()
-        
-        # 4. Recargamos la página de inicio para que aparezca en la lista
         return redirect(url_for('index'))
     
-    # Si el usuario solo está entrando a la web normalmente (GET)
-    # 1. Pedimos a la base de datos TODAS las suscripciones guardadas
     suscripciones = Suscripcion.query.all()
-    
-    # 2. Calculamos el dinero total gastado y lo redondeamos a 2 decimales
-    total = sum(sub.precio for sub in suscripciones)
-    total_redondeado = round(total, 2)
-    
-    # 3. Enviamos los datos al diseño HTML
-    return render_template('index.html', suscripciones=suscripciones, total_gastado=total_redondeado)
+    # Enviamos los datos Y la función de colores al HTML
+    return render_template('index.html', suscripciones=suscripciones, get_color=obtener_color)
 
-# RUTA CALENDARIO
+@app.route('/borrar/<int:id>')
+def borrar(id):
+    sub = Suscripcion.query.get_or_404(id)
+    db.session.delete(sub)
+    db.session.commit()
+    return redirect(url_for('index'))
+
 @app.route('/calendario')
 def calendario():
-    return render_template('calendario.html')
+    suscripciones = Suscripcion.query.all()
+    return render_template('calendario.html', suscripciones=suscripciones, get_color=obtener_color)
 
-# RUTA AHORRO
 @app.route('/ahorro')
 def ahorro():
-    return render_template('ahorro.html')
+    suscripciones = Suscripcion.query.all()
+    total = sum(sub.precio for sub in suscripciones)
+    return render_template('ahorro.html', suscripciones=suscripciones, total_gastado=round(total, 2))
 
-# RUTA AJUSTES
 @app.route('/ajustes')
 def ajustes():
     return render_template('ajustes.html')
 
-# ---------------------------------------------------------
-# INICIO DEL SERVIDOR
-# ---------------------------------------------------------
 if __name__ == '__main__':
-    # debug=True hace que los cambios se actualicen solos sin tener que apagar el servidor
     app.run(debug=True)

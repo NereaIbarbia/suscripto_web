@@ -2,62 +2,55 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suscripto - Inicio</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        
-        <aside class="sidebar">
-            <h1 class="logo">SUSCRIPTO</h1>
+    <div class="app-container" style="display: flex; height: 100vh; background-color: #f4f6f8;">
+        <aside class="sidebar" style="width: 250px; background-color: #2c3e50; color: white; padding-top: 2rem;">
+            <h1 style="text-align: center; font-weight: 700; margin-bottom: 2rem;">SUSCRIPTO</h1>
             <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item active"><a href="/">🏠 Inicio</a></li>
-                    <li class="nav-item"><a href="/calendario">📅 Calendario</a></li>
-                    <li class="nav-item"><a href="/ahorro">🐷 Ahorros</a></li>
-                    <li class="nav-item"><a href="/ajustes">⚙️ Ajustes</a></li>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/" style="color: #4CAF50; padding: 1rem 2rem; display: block; text-decoration: none; font-weight: 600;">🏠 Inicio</a></li>
+                    <li><a href="/calendario" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">📅 Calendario</a></li>
+                    <li><a href="/ahorro" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">🐷 Ahorros</a></li>
+                    <li><a href="/ajustes" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">⚙️ Ajustes</a></li>
                 </ul>
             </nav>
         </aside>
 
-        <main class="main-content">
-            
-            <section class="card text-center">
-                <h3 class="card-subtitle">Gastos Este Mes</h3>
-                <h2 class="total-price">{{ total_gastado }} €</h2>
-                <p class="text-muted">Total calculado de tus suscripciones activas</p>
-            </section>
-
-            <section class="card">
-                <h3 class="card-title">AÑADIR NUEVA</h3>
-                <form action="/" method="POST" class="add-form">
-                    <input type="text" name="nombre" placeholder="Suscripción (Ej: Netflix)" required class="form-input">
-                    <input type="number" name="precio" step="0.01" placeholder="Precio (Ej: 13.99)" required class="form-input">
-                    <input type="date" name="fecha_cobro" required class="form-input">
-                    <button type="submit" class="btn-success">➕ AÑADIR NUEVA</button>
+        <main style="flex: 1; padding: 2rem; overflow-y: auto;">
+            <section style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+                <h3>Añadir Suscripción</h3>
+                <form action="/" method="POST" style="display: flex; gap: 1rem; margin-top: 1rem; align-items: center;">
+                    <input type="text" name="nombre" placeholder="Nombre (Ej: Netflix)" required style="flex: 2; padding: 0.6rem; border: 1px solid #ddd; border-radius: 6px;">
+                    <input type="number" step="0.01" name="precio" placeholder="Precio (€)" required style="flex: 1; padding: 0.6rem; border: 1px solid #ddd; border-radius: 6px;">
+                    <input type="date" name="fecha_cobro" required style="flex: 1; padding: 0.6rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+                    
+                    <button type="submit" style="background: #4CAF50; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">AÑADIR</button>
                 </form>
             </section>
 
-            <section class="card">
-                {% if suscripciones %}
-                    <div class="subs-list">
-                        {% for sub in suscripciones %}
-                        <div class="sub-item">
-                            <span class="sub-name">📺 {{ sub.nombre }}</span>
-                            <span class="sub-price">{{ sub.precio }} €</span>
+            <section style="background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                {% for sub in suscripciones %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #eee;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 14px; height: 14px; border-radius: 50%; background-color: {{ get_color(sub.nombre) }};"></div>
+                        <div>
+                            <span style="font-weight: 600; font-size: 1.1rem;">{{ sub.nombre }}</span>
+                            <small style="display: block; color: #888;">Renovación: {{ sub.fecha_cobro[8:10] }}/{{ sub.fecha_cobro[5:7] }}/{{ sub.fecha_cobro[0:4] }}</small>
                         </div>
-                        {% endfor %}
                     </div>
+                    <div style="display: flex; align-items: center; gap: 2rem;">
+                        <span style="font-weight: 700; color: #2c3e50; font-size: 1.1rem;">{{ sub.precio }} €</span>
+                        <a href="/borrar/{{ sub.id }}" onclick="return confirm('¿Eliminar {{ sub.nombre }}?')" style="color: #e74c3c; text-decoration: none; font-weight: 700; font-size: 0.8rem; border: 1px solid #e74c3c; padding: 6px 10px; border-radius: 4px;">🗑️ BORRAR</a>
+                    </div>
+                </div>
                 {% else %}
-                    <div class="empty-state text-center">
-                        <span class="empty-icon">📁</span>
-                        <p>Aún no tienes suscripciones añadidas. ¡Añade la primera arriba!</p>
-                    </div>
-                {% endif %}
+                <div style="padding: 2rem; text-align: center; color: #888;">Aún no tienes suscripciones añadidas.</div>
+                {% endfor %}
             </section>
-
         </main>
     </div>
 </body>
