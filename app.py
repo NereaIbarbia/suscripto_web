@@ -1,11 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///suscripciones.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.mwaizxcunhxxsryifdnb:Pedorreta123@aws-1-eu-west-1.pooler.supabase.com:5432/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = 'clave_super_secreta_para_sesiones'
 db = SQLAlchemy(app)
+
+TASA_EUR_A_USD = 1.16
 
 class Suscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -32,6 +35,25 @@ def obtener_color(nombre):
     if 'xbox' in n: return '#107c10' # Verde Xbox
     if 'gimnasio' in n or 'gym' in n: return '#e67e22' # Naranja
     return '#34495e' # Color por defecto (Gris oscuro elegante)
+
+@app.context_processor
+def inject_moneda():
+    # Si el usuario no ha elegido nada, por defecto será el Euro (€)
+    return dict(moneda=session.get('moneda', '€'))
+
+@app.template_filter('convertir_precio')
+def convertir_precio(precio_base):
+    moneda_actual = session.get('moneda', '€')
+    
+    if moneda_actual == '$':
+        # Si el usuario eligió Dólares, aplicamos la conversión real
+        precio_final = precio_base * TASA_EUR_A_USD
+    else:
+        # Si es Euro, se queda exactamente igual
+        precio_final = precio_base
+        
+    # Devolvemos el número formateado siempre con 2 decimales (ej. 14.50)
+    return f"{precio_final:.2f}"
 
 # --- RUTAS ---
 @app.route('/', methods=['GET', 'POST'])
@@ -68,8 +90,16 @@ def ahorro():
     total = sum(sub.precio for sub in suscripciones)
     return render_template('ahorro.html', suscripciones=suscripciones, total_gastado=round(total, 2))
 
-@app.route('/ajustes')
+@app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
+    if request.method == 'POST':
+        # Recogemos la moneda seleccionada en el formulario
+        nueva_moneda = request.form.get('moneda')
+        if nueva_moneda:
+            session['moneda'] = nueva_moneda # La guardamos en la sesión
+        
+        return redirect(url_for('ajustes')) # Recargamos la página
+    
     return render_template('ajustes.html')
 
 if __name__ == '__main__':
