@@ -28,7 +28,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <div style="background: white; padding: 2.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                     <h3 style="color: #777; margin-bottom: 1rem;">Gasto Mensual Total</h3>
-                    <h2 style="font-size: 3.5rem; color: #2c3e50;">{{ total_gastado }} €</h2>
+                    <h2 style="font-size: 3.5rem; color: #2c3e50;">{{ total_gastado | convertir_precio }} {{ moneda }}</h2>
                     <p style="color: #27ae60; margin-top: 1rem; font-weight: 600;">✓ Datos actualizados</p>
                 </div>
 

@@ -37,12 +37,16 @@
     </div>
 
     <script>
+        // Inyectamos la moneda seleccionada desde Flask como una variable global de JS
+        const simboloMoneda = "{{ moneda }}";
+
         // EXTRAEMOS LA FECHA COMPLETA (AÑO, MES Y DÍA)
         const suscripcionesReales = [
             {% for sub in suscripciones %}
             { 
                 "nombre": {{ sub.nombre|tojson }}, 
-                "precio": {{ sub.precio }}, 
+                // AQUÍ APLICAMOS EL FILTRO: Pasamos el precio ya convertido a la vista
+                "precio": {{ sub.precio | convertir_precio }}, 
                 // Extraemos el Año (Ej: 2026)
                 "anio": parseInt("{{ sub.fecha_cobro }}".substring(0, 4), 10),
                 // Extraemos el Mes (Restamos 1 porque en JavaScript Enero es el mes 0 y Diciembre el 11)
@@ -95,8 +99,9 @@
                 suscripcionesReales.forEach(sub => {
                     // LA MAGIA ESTÁ AQUÍ: Solo dibujamos si coinciden Día, Mes Y Año.
                     if(sub.dia === d && sub.mes === m && sub.anio === a) {
+                        // CAMBIAMOS EL SÍMBOLO: Usamos la variable simboloMoneda en lugar de "€"
                         htmlDia += `<div style="background:${sub.color}; color:white; font-size:0.75rem; padding:4px; border-radius:4px; margin-top:5px; text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            ${sub.nombre} <br> ${sub.precio}€
+                            ${sub.nombre} <br> ${sub.precio}${simboloMoneda}
                         </div>`;
                     }
                 });

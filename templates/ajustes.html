@@ -23,8 +23,9 @@
 
         <main class="main-content">
             <h2 class="section-title text-center">AJUSTES</h2>
-            
-            <div class="settings-grid">
+        
+            <form action="/ajustes" method="POST">
+                <div class="settings-grid">
                 <div class="card">
                     <h3 class="card-title">ASPECTOS GRÁFICOS Y VISUALES</h3>
                     <div class="setting-row">
@@ -63,7 +64,10 @@
                     </div>
                     <div class="setting-row">
                         <span>Moneda</span>
-                        <select class="form-input"><option>Euro (€)</option><option>Dólar ($)</option></select>
+                        <select class="form-input" name="moneda">
+                            <option value="€" {% if moneda == '€' %}selected{% endif %}>Euro (€)</option>
+                            <option value="$" {% if moneda == '$' %}selected{% endif %}>Dólar ($)</option>
+                        </select>
                     </div>
                 </div>
 
@@ -76,7 +80,9 @@
             <div class="text-center mt-2">
                 <button class="btn-grey">Guardar Cambios</button>
             </div>
+        </form>
         </main>
     </div>
+    
 </body>
 </html>
