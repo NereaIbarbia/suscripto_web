@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text # AÑADIMOS ESTO PARA ACTUALIZAR LA BASE DE DATOS
 
 app = Flask(__name__)
 
@@ -10,66 +11,68 @@ db = SQLAlchemy(app)
 
 TASA_EUR_A_USD = 1.16
 
+# 1. ACTUALIZAMOS EL MODELO DE DATOS
 class Suscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     precio = db.Column(db.Float, nullable=False)
-    # AHORA LA FECHA ES UN TEXTO (String) PARA GUARDAR "YYYY-MM-DD"
     fecha_cobro = db.Column(db.String(20), nullable=False) 
+    # NUEVA COLUMNA: Mensual o Anual
+    ciclo = db.Column(db.String(20), nullable=False, default="Mensual") 
 
 with app.app_context():
     db.create_all()
+    # TRUCO: Intentamos añadir la columna nueva a la base de datos que ya existe
+    try:
+        db.session.execute(text("ALTER TABLE suscripcion ADD COLUMN ciclo VARCHAR(20) DEFAULT 'Mensual';"))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback() # Si da error es que la columna ya existe, no pasa nada
 
-# --- MAGIA DE COLORES ---
-# Esta función detecta la palabra y devuelve su color oficial
+# --- MAGIA DE COLORES --- (Esto lo dejas igual que lo tenías)
 def obtener_color(nombre):
     n = nombre.lower()
-    if 'netflix' in n: return '#e50914' # Rojo Netflix
-    if 'prime' in n or 'amazon' in n: return '#00a8e1' # Azul Prime
-    if 'spotify' in n: return '#1db954' # Verde Spotify
-    if 'hbo' in n or 'max' in n: return '#5a2e98' # Morado HBO
-    if 'disney' in n: return '#113ccf' # Azul oscuro Disney
-    if 'youtube' in n: return '#ff0000' # Rojo YouTube
-    if 'apple' in n: return '#000000' # Negro Apple
-    if 'playstation' in n or 'psn' in n: return '#003791' # Azul PS
-    if 'xbox' in n: return '#107c10' # Verde Xbox
-    if 'gimnasio' in n or 'gym' in n: return '#e67e22' # Naranja
-    return '#34495e' # Color por defecto (Gris oscuro elegante)
+    if 'netflix' in n: return '#e50914'
+    if 'prime' in n or 'amazon' in n: return '#00a8e1'
+    if 'spotify' in n: return '#1db954'
+    if 'hbo' in n or 'max' in n: return '#5a2e98'
+    if 'disney' in n: return '#113ccf'
+    if 'youtube' in n: return '#ff0000'
+    if 'apple' in n: return '#000000'
+    if 'playstation' in n or 'psn' in n: return '#003791'
+    if 'xbox' in n: return '#107c10'
+    if 'gimnasio' in n or 'gym' in n: return '#e67e22'
+    return '#34495e'
 
 @app.context_processor
 def inject_moneda():
-    # Si el usuario no ha elegido nada, por defecto será el Euro (€)
     return dict(moneda=session.get('moneda', '€'))
 
 @app.template_filter('convertir_precio')
 def convertir_precio(precio_base):
     moneda_actual = session.get('moneda', '€')
-    
     if moneda_actual == '$':
-        # Si el usuario eligió Dólares, aplicamos la conversión real
         precio_final = precio_base * TASA_EUR_A_USD
     else:
-        # Si es Euro, se queda exactamente igual
         precio_final = precio_base
-        
-    # Devolvemos el número formateado siempre con 2 decimales (ej. 14.50)
     return f"{precio_final:.2f}"
 
-# --- RUTAS ---
+# 2. ACTUALIZAMOS LA RUTA PRINCIPAL PARA GUARDAR EL CICLO
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        nombre = request.form.get('nombre')
+        # Recogemos los datos del nuevo formulario Modal
+        nombre = request.form.get('nombre_final') 
         precio = request.form.get('precio')
-        fecha = request.form.get('fecha_cobro') # Ahora recibe la fecha completa del calendario HTML
+        fecha = request.form.get('fecha_cobro')
+        ciclo = request.form.get('ciclo') # Recogemos si es mensual o anual
         
-        nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha)
+        nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo)
         db.session.add(nueva_sub)
         db.session.commit()
         return redirect(url_for('index'))
     
     suscripciones = Suscripcion.query.all()
-    # Enviamos los datos Y la función de colores al HTML
     return render_template('index.html', suscripciones=suscripciones, get_color=obtener_color)
 
 @app.route('/borrar/<int:id>')
