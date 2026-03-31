@@ -43,9 +43,28 @@
     </div>
 
     <script>
-        // Carga automática y limpia desde Flask hacia JavaScript
+        // Extraemos los nombres
         const etiquetas = {{ suscripciones|map(attribute='nombre')|list|tojson }};
-        const valores = {{ suscripciones|map(attribute='precio')|list|tojson }};
+        
+        // ARREGLO MATEMÁTICO EN LA GRÁFICA:
+        // Pasamos los precios a la gráfica. Si es Anual, lo dividimos entre 12 para que sea justo
+        const valores = [
+            {% for sub in suscripciones %}
+                {% if sub.ciclo == 'Anual' %}
+                    {{ (sub.precio / 12) | convertir_precio }}
+                {% else %}
+                    {{ sub.precio | convertir_precio }}
+                {% endif %}
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // EXTRA DE REGALO: Extraemos tus colores oficiales de Python
+        const coloresOficiales = [
+            {% for sub in suscripciones %}
+                "{{ get_color(sub.nombre) }}"{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
 
         // Si hay datos para mostrar, generamos la gráfica
         if (etiquetas && etiquetas.length > 0) {
@@ -56,7 +75,7 @@
                     labels: etiquetas,
                     datasets: [{
                         data: valores,
-                        backgroundColor: ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c'],
+                        backgroundColor: coloresOficiales, // ¡Ahora usa tus colores!
                         hoverOffset: 10
                     }]
                 },

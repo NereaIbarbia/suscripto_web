@@ -13,7 +13,7 @@
             <h1 class="logo">SUSCRIPTO</h1>
             <nav>
                 <ul class="nav-menu">
-                    <li class="nav-item"><a href="/">🏠 Inicio</a></li>
+                     <li class="nav-item"><a href="/">🏠 {{ textos.inicio }}</a></li>
                     <li class="nav-item"><a href="/calendario">📅 Calendario</a></li>
                     <li class="nav-item"><a href="/ahorro">🐷 Ahorros</a></li>
                     <li class="nav-item active"><a href="/ajustes">⚙️ Ajustes</a></li>
@@ -22,7 +22,7 @@
         </aside>
 
         <main class="main-content">
-            <h2 class="section-title text-center">AJUSTES</h2>
+            <h2 class="section-title text-center">{{ textos.ajustes }}</h2>
         
             <form action="/ajustes" method="POST">
                 <div class="settings-grid">
@@ -60,7 +60,10 @@
                     <h3 class="card-title">IDIOMA Y REGIÓN</h3>
                     <div class="setting-row">
                         <span>Idioma</span>
-                        <select class="form-input"><option>Español</option><option>English</option></select>
+                        <select class="form-input" onchange="cambiarIdioma(this.value)">
+                            <option value="es" {% if session.get('idioma','es') == 'es' %}selected{% endif %}>Español</option>
+                            <option value="en" {% if session.get('idioma','es') == 'en' %}selected{% endif %}>English</option>
+                        </select>
                     </div>
                     <div class="setting-row">
                         <span>Moneda</span>
@@ -83,6 +86,10 @@
         </form>
         </main>
     </div>
-    
+    <script>
+        function cambiarIdioma(lang) {
+        window.location.href = "/ajustes?lang=" + lang;
+        }
+    </script>
 </body>
 </html>

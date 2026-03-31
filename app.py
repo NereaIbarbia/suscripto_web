@@ -11,6 +11,31 @@ db = SQLAlchemy(app)
 
 TASA_EUR_A_USD = 1.16
 
+TRADUCCIONES = {
+    'es': {
+        'agregar': 'Añadir Suscripción',
+        'precio': 'Precio',
+        'borrar': 'BORRAR',
+        'ajustes': 'AJUSTES',
+        'inicio': 'Inicio',
+        'calendario': 'Calendario',
+        'ahorros': 'Ahorros',
+        'idioma': 'Idioma',
+        'moneda': 'Moneda'
+    },
+    'en': {
+        'agregar': 'Add Subscription',
+        'precio': 'Price',
+        'borrar': 'DELETE',
+        'ajustes': 'SETTINGS',
+        'inicio': 'Home',
+        'calendario': 'Calendar',
+        'ahorros': 'Savings',
+        'idioma': 'Language',
+        'moneda': 'Currency'
+    }
+}
+
 # 1. ACTUALIZAMOS EL MODELO DE DATOS
 class Suscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,8 +79,13 @@ def obtener_color(nombre):
     return '#34495e'
 
 @app.context_processor
-def inject_moneda():
-    return dict(moneda=session.get('moneda', '€'))
+
+def inject_configuracion():
+    moneda_actual = session.get('moneda', '€')  # Moneda guardada o €
+    idioma_actual = session.get('idioma', 'es')  # Idioma guardado o español
+    textos = TRADUCCIONES.get(idioma_actual, TRADUCCIONES['es'])  # Textos según idioma
+    
+    return dict(moneda=moneda_actual, textos=textos)
 
 @app.template_filter('convertir_precio')
 def convertir_precio(precio_base):
@@ -70,15 +100,29 @@ def convertir_precio(precio_base):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        # Recogemos los datos del nuevo formulario Modal
+        # Recogemos el ID oculto (si existe)
+        sub_id = request.form.get('sub_id')
+        
         nombre = request.form.get('nombre_final') 
         precio = request.form.get('precio')
         fecha = request.form.get('fecha_cobro')
-        ciclo = request.form.get('ciclo') # Recogemos si es mensual o anual
+        ciclo = request.form.get('ciclo') 
         es_auto = request.form.get('autorenovacion') == 'on'
         
-        nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo, autorenovacion=es_auto)
-        db.session.add(nueva_sub)
+        if sub_id:
+            # SI HAY ID: Buscamos la suscripción en la base de datos y la actualizamos
+            sub_existente = Suscripcion.query.get(int(sub_id))
+            if sub_existente:
+                sub_existente.nombre = nombre
+                sub_existente.precio = float(precio)
+                sub_existente.fecha_cobro = fecha
+                sub_existente.ciclo = ciclo
+                sub_existente.autorenovacion = es_auto
+        else:
+            # SI NO HAY ID: Creamos una nueva (como hacíamos antes)
+            nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo, autorenovacion=es_auto)
+            db.session.add(nueva_sub)
+            
         db.session.commit()
         return redirect(url_for('index'))
     
@@ -100,11 +144,15 @@ def calendario():
 @app.route('/ahorro')
 def ahorro():
     suscripciones = Suscripcion.query.all()
-    total = sum(sub.precio for sub in suscripciones)
-    return render_template('ahorro.html', suscripciones=suscripciones, total_gastado=round(total, 2))
+    total_mensual = sum(sub.precio if sub.ciclo == 'Mensual' else (sub.precio / 12) for sub in suscripciones)
+    return render_template('ahorro.html', suscripciones=suscripciones, total_gastado=total_mensual, get_color=obtener_color)
 
 @app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
+    # 👇 NUEVO: detectar cambio de idioma desde la URL (?lang=es o ?lang=en)
+    lang = request.args.get('lang')
+    if lang in TRADUCCIONES:
+        session['idioma'] = lang  # guardamos idioma en sesión
     if request.method == 'POST':
         # Recogemos la moneda seleccionada en el formulario
         nueva_moneda = request.form.get('moneda')
