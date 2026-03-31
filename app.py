@@ -19,15 +19,24 @@ class Suscripcion(db.Model):
     fecha_cobro = db.Column(db.String(20), nullable=False) 
     # NUEVA COLUMNA: Mensual o Anual
     ciclo = db.Column(db.String(20), nullable=False, default="Mensual") 
+    autorenovacion = db.Column(db.Boolean, default=True)
 
 with app.app_context():
     db.create_all()
-    # TRUCO: Intentamos añadir la columna nueva a la base de datos que ya existe
+    
+    # Intento 1: Añadir ciclo (si ya existe, fallará en silencio y no pasa nada)
     try:
         db.session.execute(text("ALTER TABLE suscripcion ADD COLUMN ciclo VARCHAR(20) DEFAULT 'Mensual';"))
         db.session.commit()
-    except Exception as e:
-        db.session.rollback() # Si da error es que la columna ya existe, no pasa nada
+    except Exception:
+        db.session.rollback()
+
+    # Intento 2: Añadir autorenovacion
+    try:
+        db.session.execute(text("ALTER TABLE suscripcion ADD COLUMN autorenovacion BOOLEAN DEFAULT TRUE;"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 # --- MAGIA DE COLORES --- (Esto lo dejas igual que lo tenías)
 def obtener_color(nombre):
@@ -66,8 +75,9 @@ def index():
         precio = request.form.get('precio')
         fecha = request.form.get('fecha_cobro')
         ciclo = request.form.get('ciclo') # Recogemos si es mensual o anual
+        es_auto = request.form.get('autorenovacion') == 'on'
         
-        nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo)
+        nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo, autorenovacion=es_auto)
         db.session.add(nueva_sub)
         db.session.commit()
         return redirect(url_for('index'))

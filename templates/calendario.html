@@ -37,23 +37,20 @@
     </div>
 
     <script>
-        // Inyectamos la moneda seleccionada desde Flask como una variable global de JS
         const simboloMoneda = "{{ moneda }}";
 
-        // EXTRAEMOS LA FECHA COMPLETA (AÑO, MES Y DÍA)
         const suscripcionesReales = [
             {% for sub in suscripciones %}
             { 
                 "nombre": {{ sub.nombre|tojson }}, 
-                // AQUÍ APLICAMOS EL FILTRO: Pasamos el precio ya convertido a la vista
                 "precio": {{ sub.precio | convertir_precio }}, 
-                // Extraemos el Año (Ej: 2026)
                 "anio": parseInt("{{ sub.fecha_cobro }}".substring(0, 4), 10),
-                // Extraemos el Mes (Restamos 1 porque en JavaScript Enero es el mes 0 y Diciembre el 11)
                 "mes": parseInt("{{ sub.fecha_cobro }}".substring(5, 7), 10) - 1,
-                // Extraemos el Día (Ej: 15)
                 "dia": parseInt("{{ sub.fecha_cobro }}".substring(8, 10), 10),
-                "color": "{{ get_color(sub.nombre) }}"
+                "color": "{{ get_color(sub.nombre) }}",
+                // NUEVOS DATOS PARA EL CALENDARIO
+                "ciclo": "{{ sub.ciclo }}",
+                "autorenovacion": {{ 'true' if sub.autorenovacion else 'false' }}
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ];
@@ -65,20 +62,18 @@
 
         function cargarSelects() {
             nombresMeses.forEach((m, i) => mesSelect.innerHTML += `<option value="${i}">${m}</option>`);
-            // Mostrar desde el año pasado hasta 3 años en el futuro
             const anioActual = new Date().getFullYear();
-            for(let a = anioActual - 1; a <= anioActual + 3; a++) {
+            for(let a = anioActual - 1; a <= anioActual + 5; a++) {
                 anioSelect.innerHTML += `<option value="${a}">${a}</option>`;
             }
-            // Poner por defecto el mes y año en el que estamos hoy
             mesSelect.value = new Date().getMonth();
             anioSelect.value = anioActual;
         }
 
         function dibujar() {
             grid.innerHTML = '';
-            const m = parseInt(mesSelect.value); // Mes seleccionado en pantalla
-            const a = parseInt(anioSelect.value); // Año seleccionado en pantalla
+            const m = parseInt(mesSelect.value); 
+            const a = parseInt(anioSelect.value); 
 
             ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(d => {
                 grid.innerHTML += `<div style="text-align:center; padding:12px; background:#f8f9fa; font-weight:700; border-bottom:2px solid #eee; border-right:1px solid #eee;">${d}</div>`;
@@ -97,11 +92,33 @@
                     <span style="font-weight:700; color:#555;">${d}</span>`;
                 
                 suscripcionesReales.forEach(sub => {
-                    // LA MAGIA ESTÁ AQUÍ: Solo dibujamos si coinciden Día, Mes Y Año.
-                    if(sub.dia === d && sub.mes === m && sub.anio === a) {
-                        // CAMBIAMOS EL SÍMBOLO: Usamos la variable simboloMoneda en lugar de "€"
+                    let mostrar = false;
+                    
+                    let fechaCalendario = new Date(a, m, d);
+                    let fechaSub = new Date(sub.anio, sub.mes, sub.dia);
+
+                    // LA MAGIA: Calculamos si el mes es más corto que el día de cobro
+                    // Si el mes tiene 28 días y el cobro es el 31, diaCobroReal será 28.
+                    let diaCobroReal = Math.min(sub.dia, totalDias);
+
+                    if (sub.autorenovacion) {
+                        // Si se renueva sola, comprobamos que estemos en el futuro
+                        if (fechaCalendario >= new Date(sub.anio, sub.mes, 1)) {
+                            // Si es mensual, usamos el diaCobroReal
+                            if (sub.ciclo === "Mensual" && diaCobroReal === d) mostrar = true;
+                            
+                            // Si es anual, comprobamos mes y usamos diaCobroReal (por si cae en 29 de febrero)
+                            if (sub.ciclo === "Anual" && sub.mes === m && diaCobroReal === d) mostrar = true;
+                        }
+                    } else {
+                        // Si NO se renueva, solo sale la fecha original (una sola vez en la vida)
+                        if(sub.dia === d && sub.mes === m && sub.anio === a) mostrar = true;
+                    }
+
+                    if(mostrar) {
                         htmlDia += `<div style="background:${sub.color}; color:white; font-size:0.75rem; padding:4px; border-radius:4px; margin-top:5px; text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                             ${sub.nombre} <br> ${sub.precio}${simboloMoneda}
+                            ${sub.autorenovacion ? ' 🔄' : ''}
                         </div>`;
                     }
                 });
