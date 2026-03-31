@@ -11,6 +11,32 @@ db = SQLAlchemy(app)
 
 TASA_EUR_A_USD = 1.16
 
+# Diccionario de traduccione
+TRADUCCIONES = {
+    'es': {
+        'agregar': 'Añadir Suscripción',
+        'precio': 'Precio',
+        'borrar': 'BORRAR',
+        'ajustes': 'AJUSTES',
+        'inicio': 'Inicio',
+        'calendario': 'Calendario',
+        'ahorros': 'Ahorros',
+        'idioma': 'Idioma',
+        'moneda': 'Moneda'
+    },
+    'en': {
+        'agregar': 'Add Subscription',
+        'precio': 'Price',
+        'borrar': 'DELETE',
+        'ajustes': 'SETTINGS',
+        'inicio': 'Home',
+        'calendario': 'Calendar',
+        'ahorros': 'Savings',
+        'idioma': 'Language',
+        'moneda': 'Currency'
+    }
+}
+
 # 1. ACTUALIZAMOS EL MODELO DE DATOS
 class Suscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,8 +80,12 @@ def obtener_color(nombre):
     return '#34495e'
 
 @app.context_processor
-def inject_moneda():
-    return dict(moneda=session.get('moneda', '€'))
+def inject_configuracion():
+    moneda_actual = session.get('moneda', '€')  # Moneda guardada o €
+    idioma_actual = session.get('idioma', 'es')  # Idioma guardado o español
+    textos = TRADUCCIONES.get(idioma_actual, TRADUCCIONES['es'])  # Textos según idioma
+    
+    return dict(moneda=moneda_actual, textos=textos)
 
 @app.template_filter('convertir_precio')
 def convertir_precio(precio_base):
@@ -105,13 +135,18 @@ def ahorro():
 
 @app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
+    # 👇 NUEVO: detectar cambio de idioma desde la URL (?lang=es o ?lang=en)
+    lang = request.args.get('lang')
+    if lang in TRADUCCIONES:
+        session['idioma'] = lang  # guardamos idioma en sesión
+
     if request.method == 'POST':
-        # Recogemos la moneda seleccionada en el formulario
+        # 👇 YA LO TENÍAS: guardar moneda
         nueva_moneda = request.form.get('moneda')
         if nueva_moneda:
-            session['moneda'] = nueva_moneda # La guardamos en la sesión
+            session['moneda'] = nueva_moneda
         
-        return redirect(url_for('ajustes')) # Recargamos la página
+        return redirect(url_for('ajustes'))  # recargar página
     
     return render_template('ajustes.html')
 
