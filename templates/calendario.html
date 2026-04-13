@@ -2,27 +2,27 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Suscripto - Calendario</title>
+    <title>Suscripto - {{ textos.calendario }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="{% if modo_oscuro %}dark-mode{% endif %}">
     <div class="app-container" style="display: flex; height: 100vh; overflow: hidden; background-color: #f4f6f8;">
         <aside class="sidebar" style="width: 250px; background-color: #2c3e50; color: white; display: flex; flex-direction: column; padding-top: 2rem;">
             <h1 style="text-align: center; font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 3rem;">SUSCRIPTO</h1>
             <nav>
                 <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
-                    <li><a href="/" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🏠 Inicio</a></li>
-                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/calendario" style="text-decoration: none; color: #4CAF50; font-weight: 600; padding: 1rem 2rem; display: block;">📅 Calendario</a></li>
-                    <li><a href="/ahorro" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🐷 Ahorros</a></li>
-                    <li><a href="/ajustes" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">⚙️ Ajustes</a></li>
+                    <li><a href="/" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🏠 {{ textos.inicio }}</a></li>
+                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/calendario" style="text-decoration: none; color: #4CAF50; font-weight: 600; padding: 1rem 2rem; display: block;">📅 {{ textos.calendario }}</a></li>
+                    <li><a href="/ahorro" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🐷 {{ textos.ahorros }}</a></li>
+                    <li><a href="/ajustes" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">⚙️ {{ textos.ajustes }}</a></li>
                 </ul>
             </nav>
         </aside>
 
         <main style="flex: 1; padding: 2.5rem; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 style="color: #2c3e50;">Calendario Personalizado</h2>
+                <h2 style="color: #2c3e50;">{{ textos.calendario_personalizado }}</h2>
                 <div style="display: flex; gap: 0.5rem;">
                     <select id="mesSelect" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ddd;"></select>
                     <select id="anioSelect" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ddd;"></select>
@@ -31,7 +31,7 @@
 
             <div style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden;">
                 <div id="calendarioGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); width: 100%;">
-                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -43,12 +43,11 @@
             {% for sub in suscripciones %}
             { 
                 "nombre": {{ sub.nombre|tojson }}, 
-                "precio": {{ sub.precio | convertir_precio }}, 
+                "precio": "{{ sub.precio | convertir_precio }}", 
                 "anio": parseInt("{{ sub.fecha_cobro }}".substring(0, 4), 10),
                 "mes": parseInt("{{ sub.fecha_cobro }}".substring(5, 7), 10) - 1,
                 "dia": parseInt("{{ sub.fecha_cobro }}".substring(8, 10), 10),
                 "color": "{{ get_color(sub.nombre) }}",
-                // NUEVOS DATOS PARA EL CALENDARIO
                 "ciclo": "{{ sub.ciclo }}",
                 "autorenovacion": {{ 'true' if sub.autorenovacion else 'false' }}
             }{% if not loop.last %},{% endif %}
@@ -58,7 +57,10 @@
         const grid = document.getElementById('calendarioGrid');
         const mesSelect = document.getElementById('mesSelect');
         const anioSelect = document.getElementById('anioSelect');
-        const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        
+        // Traducciones traídas del backend en Python
+        const nombresMeses = {{ textos.meses | tojson | safe }};
+        const diasSemana = {{ textos.dias | tojson | safe }};
 
         function cargarSelects() {
             nombresMeses.forEach((m, i) => mesSelect.innerHTML += `<option value="${i}">${m}</option>`);
@@ -75,7 +77,7 @@
             const m = parseInt(mesSelect.value); 
             const a = parseInt(anioSelect.value); 
 
-            ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(d => {
+            diasSemana.forEach(d => {
                 grid.innerHTML += `<div style="text-align:center; padding:12px; background:#f8f9fa; font-weight:700; border-bottom:2px solid #eee; border-right:1px solid #eee;">${d}</div>`;
             });
 
@@ -93,31 +95,21 @@
                 
                 suscripcionesReales.forEach(sub => {
                     let mostrar = false;
-                    
                     let fechaCalendario = new Date(a, m, d);
-                    let fechaSub = new Date(sub.anio, sub.mes, sub.dia);
-
-                    // LA MAGIA: Calculamos si el mes es más corto que el día de cobro
-                    // Si el mes tiene 28 días y el cobro es el 31, diaCobroReal será 28.
                     let diaCobroReal = Math.min(sub.dia, totalDias);
 
                     if (sub.autorenovacion) {
-                        // Si se renueva sola, comprobamos que estemos en el futuro
                         if (fechaCalendario >= new Date(sub.anio, sub.mes, 1)) {
-                            // Si es mensual, usamos el diaCobroReal
                             if (sub.ciclo === "Mensual" && diaCobroReal === d) mostrar = true;
-                            
-                            // Si es anual, comprobamos mes y usamos diaCobroReal (por si cae en 29 de febrero)
                             if (sub.ciclo === "Anual" && sub.mes === m && diaCobroReal === d) mostrar = true;
                         }
                     } else {
-                        // Si NO se renueva, solo sale la fecha original (una sola vez en la vida)
                         if(sub.dia === d && sub.mes === m && sub.anio === a) mostrar = true;
                     }
 
                     if(mostrar) {
                         htmlDia += `<div style="background:${sub.color}; color:white; font-size:0.75rem; padding:4px; border-radius:4px; margin-top:5px; text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            ${sub.nombre} <br> ${sub.precio}${simboloMoneda}
+                            ${sub.nombre} <br> ${sub.precio} ${simboloMoneda}
                             ${sub.autorenovacion ? ' 🔄' : ''}
                         </div>`;
                     }

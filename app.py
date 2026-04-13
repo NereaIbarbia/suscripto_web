@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text # AÑADIMOS ESTO PARA ACTUALIZAR LA BASE DE DATOS
+from sqlalchemy import text 
 
 app = Flask(__name__)
 
@@ -9,61 +9,81 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'clave_super_secreta_para_sesiones'
 db = SQLAlchemy(app)
 
+# Tasa de conversión de Euros a Dólares
 TASA_EUR_A_USD = 1.16
 
+# Diccionario completo de traducciones
 TRADUCCIONES = {
     'es': {
-        'agregar': 'Añadir Suscripción',
-        'precio': 'Precio',
-        'borrar': 'BORRAR',
-        'ajustes': 'AJUSTES',
-        'inicio': 'Inicio',
-        'calendario': 'Calendario',
-        'ahorros': 'Ahorros',
-        'idioma': 'Idioma',
-        'moneda': 'Moneda'
+        'inicio': 'Inicio', 'calendario': 'Calendario', 'ahorros': 'Ahorros', 'ajustes': 'Ajustes',
+        'mis_suscripciones': 'Mis Suscripciones', 'anadir_nueva': '➕ Añadir Nueva',
+        'nueva_suscripcion': 'Nueva Suscripción', 'editar_suscripcion': 'Editar Suscripción',
+        'servicio': 'Servicio', 'elige_servicio': 'Elige un servicio...', 'otro_personalizado': '✏️ Otro (Personalizado)',
+        'nombre_suscripcion': 'Nombre de la suscripción', 'ejemplo_nombre': 'Ej: Gimnasio, ChatGPT...',
+        'ciclo': 'Ciclo', 'mensual': 'Mensual', 'anual': 'Anual',
+        'precio': 'Precio', 'proximo_cobro': 'Próximo Cobro', 'renovacion_automatica': '🔄 Renovación automática',
+        'guardar': 'GUARDAR', 'cobro': 'Cobro', 'editar': '✏️ EDITAR', 'borrar': '🗑️ BORRAR',
+        'confirmar_borrar': '¿Seguro que quieres eliminar',
+        'sin_suscripciones': 'Aún no tienes suscripciones. Haz clic en el botón de arriba para añadir la primera.',
+        'resumen_gastos': 'RESUMEN DE GASTOS', 'gasto_mensual': 'Gasto Mensual Total',
+        'datos_actualizados': '✓ Datos actualizados', 'distribucion': 'Distribución por Suscripción',
+        'calendario_personalizado': 'Calendario Personalizado',
+        'aspectos_graficos': 'ASPECTOS GRÁFICOS Y VISUALES', 'modo_oscuro': 'Modo Oscuro', 'tema_color': 'Tema de Color',
+        'funcionalidades': 'FUNCIONALIDADES', 'noti_vencimiento': 'Notificaciones de Vencimiento', 'recordatorios': 'Recordatorios de Ahorro',
+        'idioma_region': 'IDIOMA Y REGIÓN', 'idioma': 'Idioma', 'espanol': 'Español', 'ingles': 'Inglés',
+        'moneda': 'Moneda', 'otras_configs': 'OTRAS CONFIGURACIONES', 'gestionar_pagos': 'Gestionar Métodos de Pago',
+        'cerrar_sesion': 'Cerrar Sesión', 'guardar_cambios': 'Guardar Cambios',
+        'euro': 'Euro (€)', 'dolar': 'Dólar ($)',
+        'meses': ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+        'dias': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
     },
     'en': {
-        'agregar': 'Add Subscription',
-        'precio': 'Price',
-        'borrar': 'DELETE',
-        'ajustes': 'SETTINGS',
-        'inicio': 'Home',
-        'calendario': 'Calendar',
-        'ahorros': 'Savings',
-        'idioma': 'Language',
-        'moneda': 'Currency'
+        'inicio': 'Home', 'calendario': 'Calendar', 'ahorros': 'Savings', 'ajustes': 'Settings',
+        'mis_suscripciones': 'My Subscriptions', 'anadir_nueva': '➕ Add New',
+        'nueva_suscripcion': 'New Subscription', 'editar_suscripcion': 'Edit Subscription',
+        'servicio': 'Service', 'elige_servicio': 'Choose a service...', 'otro_personalizado': '✏️ Other (Custom)',
+        'nombre_suscripcion': 'Subscription Name', 'ejemplo_nombre': 'Ex: Gym, ChatGPT...',
+        'ciclo': 'Cycle', 'mensual': 'Monthly', 'anual': 'Yearly',
+        'precio': 'Price', 'proximo_cobro': 'Next Billing', 'renovacion_automatica': '🔄 Auto-renewal',
+        'guardar': 'SAVE', 'cobro': 'Billing', 'editar': '✏️ EDIT', 'borrar': '🗑️ DELETE',
+        'confirmar_borrar': 'Are you sure you want to delete',
+        'sin_suscripciones': 'You have no subscriptions yet. Click the button above to add your first one.',
+        'resumen_gastos': 'EXPENSE SUMMARY', 'gasto_mensual': 'Total Monthly Expense',
+        'datos_actualizados': '✓ Data updated', 'distribucion': 'Subscription Distribution',
+        'calendario_personalizado': 'Custom Calendar',
+        'aspectos_graficos': 'GRAPHICS AND VISUALS', 'modo_oscuro': 'Dark Mode', 'tema_color': 'Color Theme',
+        'funcionalidades': 'FEATURES', 'noti_vencimiento': 'Expiration Notifications', 'recordatorios': 'Savings Reminders',
+        'idioma_region': 'LANGUAGE AND REGION', 'idioma': 'Language', 'espanol': 'Spanish', 'ingles': 'English',
+        'moneda': 'Currency', 'otras_configs': 'OTHER SETTINGS', 'gestionar_pagos': 'Manage Payment Methods',
+        'cerrar_sesion': 'Log Out', 'guardar_cambios': 'Save Changes',
+        'euro': 'Euro (€)', 'dolar': 'Dollar ($)',
+        'meses': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        'dias': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     }
 }
 
-# 1. ACTUALIZAMOS EL MODELO DE DATOS
 class Suscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     precio = db.Column(db.Float, nullable=False)
     fecha_cobro = db.Column(db.String(20), nullable=False) 
-    # NUEVA COLUMNA: Mensual o Anual
     ciclo = db.Column(db.String(20), nullable=False, default="Mensual") 
     autorenovacion = db.Column(db.Boolean, default=True)
 
 with app.app_context():
     db.create_all()
-    
-    # Intento 1: Añadir ciclo (si ya existe, fallará en silencio y no pasa nada)
     try:
         db.session.execute(text("ALTER TABLE suscripcion ADD COLUMN ciclo VARCHAR(20) DEFAULT 'Mensual';"))
         db.session.commit()
     except Exception:
         db.session.rollback()
 
-    # Intento 2: Añadir autorenovacion
     try:
         db.session.execute(text("ALTER TABLE suscripcion ADD COLUMN autorenovacion BOOLEAN DEFAULT TRUE;"))
         db.session.commit()
     except Exception:
         db.session.rollback()
 
-# --- MAGIA DE COLORES --- (Esto lo dejas igual que lo tenías)
 def obtener_color(nombre):
     n = nombre.lower()
     if 'netflix' in n: return '#e50914'
@@ -79,16 +99,22 @@ def obtener_color(nombre):
     return '#34495e'
 
 @app.context_processor
-
 def inject_configuracion():
-    moneda_actual = session.get('moneda', '€')  # Moneda guardada o €
-    idioma_actual = session.get('idioma', 'es')  # Idioma guardado o español
-    textos = TRADUCCIONES.get(idioma_actual, TRADUCCIONES['es'])  # Textos según idioma
+    moneda_actual = session.get('moneda', '€')
+    idioma_actual = session.get('idioma', 'es')
+    textos = TRADUCCIONES.get(idioma_actual, TRADUCCIONES['es'])
+    modo_oscuro = session.get('modo_oscuro', False)
     
-    return dict(moneda=moneda_actual, textos=textos)
+    return dict(moneda=moneda_actual, textos=textos, modo_oscuro=modo_oscuro)
 
+# Filtro para convertir moneda de euros a dólares
 @app.template_filter('convertir_precio')
 def convertir_precio(precio_base):
+    try:
+        precio_base = float(precio_base)
+    except (ValueError, TypeError):
+        precio_base = 0.0
+        
     moneda_actual = session.get('moneda', '€')
     if moneda_actual == '$':
         precio_final = precio_base * TASA_EUR_A_USD
@@ -96,13 +122,10 @@ def convertir_precio(precio_base):
         precio_final = precio_base
     return f"{precio_final:.2f}"
 
-# 2. ACTUALIZAMOS LA RUTA PRINCIPAL PARA GUARDAR EL CICLO
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        # Recogemos el ID oculto (si existe)
         sub_id = request.form.get('sub_id')
-        
         nombre = request.form.get('nombre_final') 
         precio = request.form.get('precio')
         fecha = request.form.get('fecha_cobro')
@@ -110,7 +133,6 @@ def index():
         es_auto = request.form.get('autorenovacion') == 'on'
         
         if sub_id:
-            # SI HAY ID: Buscamos la suscripción en la base de datos y la actualizamos
             sub_existente = Suscripcion.query.get(int(sub_id))
             if sub_existente:
                 sub_existente.nombre = nombre
@@ -119,7 +141,6 @@ def index():
                 sub_existente.ciclo = ciclo
                 sub_existente.autorenovacion = es_auto
         else:
-            # SI NO HAY ID: Creamos una nueva (como hacíamos antes)
             nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo, autorenovacion=es_auto)
             db.session.add(nueva_sub)
             
@@ -149,17 +170,22 @@ def ahorro():
 
 @app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
-    # 👇 NUEVO: detectar cambio de idioma desde la URL (?lang=es o ?lang=en)
     lang = request.args.get('lang')
     if lang in TRADUCCIONES:
-        session['idioma'] = lang  # guardamos idioma en sesión
+        session['idioma'] = lang 
+        
     if request.method == 'POST':
-        # Recogemos la moneda seleccionada en el formulario
         nueva_moneda = request.form.get('moneda')
         if nueva_moneda:
-            session['moneda'] = nueva_moneda # La guardamos en la sesión
+            session['moneda'] = nueva_moneda 
+            
+        modo_oscuro_form = request.form.get('modo_oscuro')
+        if modo_oscuro_form == 'on':
+            session['modo_oscuro'] = True
+        else:
+            session['modo_oscuro'] = False
         
-        return redirect(url_for('ajustes')) # Recargamos la página
+        return redirect(url_for('ajustes')) 
     
     return render_template('ajustes.html')
 

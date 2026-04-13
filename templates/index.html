@@ -2,21 +2,21 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Suscripto - Inicio</title>
+    <title>Suscripto - {{ textos.inicio }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="{% if modo_oscuro %}dark-mode{% endif %}">
     <div class="app-container" style="display: flex; height: 100vh; background-color: #f4f6f8;">
         
         <aside class="sidebar" style="width: 250px; background-color: #2c3e50; color: white; padding-top: 2rem;">
             <h1 style="text-align: center; font-weight: 700; margin-bottom: 2rem;">SUSCRIPTO</h1>
             <nav>
                 <ul style="list-style: none; padding: 0;">
-                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/" style="color: #4CAF50; padding: 1rem 2rem; display: block; text-decoration: none; font-weight: 600;">🏠 Inicio</a></li>
-                    <li><a href="/calendario" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">📅 Calendario</a></li>
-                    <li><a href="/ahorro" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">🐷 Ahorros</a></li>
-                    <li><a href="/ajustes" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">⚙️ Ajustes</a></li>
+                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/" style="color: #4CAF50; padding: 1rem 2rem; display: block; text-decoration: none; font-weight: 600;">🏠 {{ textos.inicio }}</a></li>
+                    <li><a href="/calendario" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">📅 {{ textos.calendario }}</a></li>
+                    <li><a href="/ahorro" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">🐷 {{ textos.ahorros }}</a></li>
+                    <li><a href="/ajustes" style="color: #aeb6bf; padding: 1rem 2rem; display: block; text-decoration: none;">⚙️ {{ textos.ajustes }}</a></li>
                 </ul>
             </nav>
         </aside>
@@ -24,34 +24,34 @@
         <main style="flex: 1; padding: 2rem; overflow-y: auto; position: relative;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h2 style="color: #2c3e50;">Mis Suscripciones</h2>
+                <h2 style="color: #2c3e50;">{{ textos.mis_suscripciones }}</h2>
                 
                 <button onclick="abrirModalNuevo()" style="background: #4CAF50; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);">
-                    ➕ Añadir Nueva
+                    {{ textos.anadir_nueva }}
                 </button>
             </div>
 
             <div id="miModal" class="modal">
                 <div class="modal-content">
                     <span class="close-btn" onclick="cerrarModal()">&times;</span>
-                    <h3 style="margin-bottom: 1.5rem; color: #2c3e50; text-align: center;">Nueva Suscripción</h3>
+                    <h3 id="modalTitulo" style="margin-bottom: 1.5rem; color: #2c3e50; text-align: center;">{{ textos.nueva_suscripcion }}</h3>
                     
                     <form action="/" method="POST" style="display: flex; flex-direction: column; gap: 1rem;">
                         
-                        <label style="font-weight: 600; font-size: 0.9rem; color: #555;">Servicio</label>
+                        <label style="font-weight: 600; font-size: 0.9rem; color: #555;">{{ textos.servicio }}</label>
                         <select id="appSelect" onchange="actualizarFormulario()" style="padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd; font-size: 1rem;">
-                            <option value="" disabled selected>Elige un servicio...</option>
+                            <option value="" disabled selected>{{ textos.elige_servicio }}</option>
                             <option value="Netflix" data-mensual="12.99" data-anual="155.88">Netflix (Estándar)</option>
                             <option value="Spotify" data-mensual="10.99" data-anual="109.90">Spotify Premium</option>
                             <option value="Amazon Prime" data-mensual="4.99" data-anual="49.90">Amazon Prime</option>
                             <option value="Disney+" data-mensual="8.99" data-anual="89.90">Disney+</option>
                             <option value="HBO Max" data-mensual="9.99" data-anual="99.90">HBO Max</option>
-                            <option value="Otro">✏️ Otro (Personalizado)</option>
+                            <option value="Otro">{{ textos.otro_personalizado }}</option>
                         </select>
 
                         <div id="divNombrePersonalizado" style="display: none; flex-direction: column; gap: 0.5rem;">
-                            <label style="font-weight: 600; font-size: 0.9rem; color: #555;">Nombre de la suscripción</label>
-                            <input type="text" id="nombreInput" placeholder="Ej: Gimnasio, ChatGPT..." style="padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd;">
+                            <label style="font-weight: 600; font-size: 0.9rem; color: #555;">{{ textos.nombre_suscripcion }}</label>
+                            <input type="text" id="nombreInput" placeholder="{{ textos.ejemplo_nombre }}" style="padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd;">
                         </div>
 
                         <input type="hidden" name="nombre_final" id="nombreFinal">
@@ -59,26 +59,26 @@
 
                         <div style="display: flex; gap: 1rem;">
                             <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
-                                <label style="font-weight: 600; font-size: 0.9rem; color: #555;">Ciclo</label>
+                                <label style="font-weight: 600; font-size: 0.9rem; color: #555;">{{ textos.ciclo }}</label>
                                 <select name="ciclo" id="cicloSelect" onchange="actualizarFormulario()" required style="padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd;">
-                                    <option value="Mensual">Mensual</option>
-                                    <option value="Anual">Anual</option>
+                                    <option value="Mensual">{{ textos.mensual }}</option>
+                                    <option value="Anual">{{ textos.anual }}</option>
                                 </select>
                             </div>
                             <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
-                                <label style="font-weight: 600; font-size: 0.9rem; color: #555;">Precio ({{ moneda }})</label>
+                                <label style="font-weight: 600; font-size: 0.9rem; color: #555;">{{ textos.precio }} (base)</label>
                                 <input type="number" step="0.01" name="precio" id="precioInput" placeholder="0.00" required style="padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd;">
                             </div>
                         </div>
 
-                        <label style="font-weight: 600; font-size: 0.9rem; color: #555;">Próximo Cobro</label>
+                        <label style="font-weight: 600; font-size: 0.9rem; color: #555;">{{ textos.proximo_cobro }}</label>
                         <input type="date" name="fecha_cobro" required style="padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd; font-family: inherit;">
                         <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
                             <input type="checkbox" id="autorenovar" name="autorenovacion" checked style="width: 18px; height: 18px; cursor: pointer;">
-                            <label for="autorenovar" style="font-weight: 600; font-size: 0.9rem; color: #555; cursor: pointer;">🔄 Renovación automática</label>
+                            <label for="autorenovar" style="font-weight: 600; font-size: 0.9rem; color: #555; cursor: pointer;">{{ textos.renovacion_automatica }}</label>
                         </div>
                         
-                        <button type="submit" onclick="prepararEnvio()" style="background: #4CAF50; color: white; border: none; padding: 1rem; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 1rem; margin-top: 1rem;">GUARDAR</button>
+                        <button type="submit" onclick="prepararEnvio()" style="background: #4CAF50; color: white; border: none; padding: 1rem; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 1rem; margin-top: 1rem;">{{ textos.guardar }}</button>
                     </form>
                 </div>
             </div>
@@ -90,44 +90,45 @@
                         <div style="width: 16px; height: 16px; border-radius: 50%; background-color: {{ get_color(sub.nombre) }};"></div>
                         <div>
                             <span style="font-weight: 600; font-size: 1.1rem; color: #2c3e50;">{{ sub.nombre }}</span>
-                            <span style="background: #eef2f5; color: #7f8c8d; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600;">{{ sub.ciclo }}</span>
-                            <small style="display: block; color: #888; margin-top: 4px;">Cobro: {{ sub.fecha_cobro[8:10] }}/{{ sub.fecha_cobro[5:7] }}/{{ sub.fecha_cobro[0:4] }}</small>
+                            <span style="background: #eef2f5; color: #7f8c8d; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600;">
+                                {% if sub.ciclo == 'Mensual' %}{{ textos.mensual }}{% else %}{{ textos.anual }}{% endif %}
+                            </span>
+                            <small style="display: block; color: #888; margin-top: 4px;">{{ textos.cobro }}: {{ sub.fecha_cobro[8:10] }}/{{ sub.fecha_cobro[5:7] }}/{{ sub.fecha_cobro[0:4] }}</small>
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 2rem;">
                         <span style="font-weight: 700; color: #2c3e50; font-size: 1.2rem;">{{ sub.precio | convertir_precio }} {{ moneda }}</span>
-                        <button onclick="abrirModalEditar('{{ sub.id }}', '{{ sub.nombre }}', '{{ sub.precio }}', '{{ sub.fecha_cobro }}', '{{ sub.ciclo }}', {{ 'true' if sub.autorenovacion else 'false' }})" style="color: #3498db; background: transparent; border: 1px solid #3498db; font-weight: 700; font-size: 0.8rem; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">✏️ EDITAR</button>
-                        <a href="/borrar/{{ sub.id }}" onclick="return confirm('¿Eliminar {{ sub.nombre }}?')" style="color: #e74c3c; text-decoration: none; font-weight: 700; font-size: 0.8rem; border: 1px solid #e74c3c; padding: 8px 12px; border-radius: 6px; transition: all 0.2s;">🗑️ BORRAR</a>
+                        <button onclick="abrirModalEditar('{{ sub.id }}', '{{ sub.nombre }}', '{{ sub.precio }}', '{{ sub.fecha_cobro }}', '{{ sub.ciclo }}', {{ 'true' if sub.autorenovacion else 'false' }})" style="color: #3498db; background: transparent; border: 1px solid #3498db; font-weight: 700; font-size: 0.8rem; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">{{ textos.editar }}</button>
+                        <a href="/borrar/{{ sub.id }}" onclick="return confirm('{{ textos.confirmar_borrar }} {{ sub.nombre }}?')" style="color: #e74c3c; text-decoration: none; font-weight: 700; font-size: 0.8rem; border: 1px solid #e74c3c; padding: 8px 12px; border-radius: 6px; transition: all 0.2s;">{{ textos.borrar }}</a>
                     </div>
                 </div>
                 {% else %}
-                <div style="padding: 3rem; text-align: center; color: #888; font-size: 1.1rem;">Aún no tienes suscripciones. Haz clic en el botón de arriba para añadir la primera.</div>
+                <div style="padding: 3rem; text-align: center; color: #888; font-size: 1.1rem;">{{ textos.sin_suscripciones }}</div>
                 {% endfor %}
             </section>
         </main>
     </div>
 
     <script>
-        // Funciones para abrir y cerrar la ventana flotante
-        // Cuando pulsamos en Añadir Nueva
+        const textoNueva = "{{ textos.nueva_suscripcion }}";
+        const textoEditar = "{{ textos.editar_suscripcion }}";
+
         function abrirModalNuevo() { 
-            document.getElementById('subIdInput').value = ''; // Borramos el ID
-            document.querySelector('.modal-content h3').innerText = 'Nueva Suscripción';
+            document.getElementById('subIdInput').value = ''; 
+            document.getElementById('modalTitulo').innerText = textoNueva;
             document.getElementById('divNombrePersonalizado').style.display = 'none';
-            document.querySelector('form').reset(); // Vaciamos todo
+            document.querySelector('form').reset(); 
             document.getElementById('miModal').style.display = 'flex'; 
         }
 
-        // Cuando pulsamos en Editar
         function abrirModalEditar(id, nombre, precio, fecha, ciclo, auto) {
-            document.getElementById('subIdInput').value = id; // Guardamos el ID
-            document.querySelector('.modal-content h3').innerText = 'Editar Suscripción';
+            document.getElementById('subIdInput').value = id; 
+            document.getElementById('modalTitulo').innerText = textoEditar;
             
             const appSelect = document.getElementById('appSelect');
             const divNombre = document.getElementById('divNombrePersonalizado');
             const nombreInput = document.getElementById('nombreInput');
 
-            // Buscamos si el nombre está en nuestra lista de apps
             let esAppConocida = false;
             for(let i=0; i < appSelect.options.length; i++) {
                 if(appSelect.options[i].value === nombre) {
@@ -137,7 +138,6 @@
                 }
             }
 
-            // Si es un nombre personalizado, elegimos "Otro" y rellenamos la caja de texto
             if(!esAppConocida) {
                 appSelect.value = "Otro";
                 divNombre.style.display = 'flex';
@@ -146,7 +146,6 @@
                 divNombre.style.display = 'none';
             }
 
-            // Rellenamos el resto de los campos
             document.getElementById('precioInput').value = precio;
             document.getElementById('cicloSelect').value = ciclo;
             document.querySelector('input[name="fecha_cobro"]').value = fecha;
@@ -157,12 +156,10 @@
 
         function cerrarModal() { document.getElementById('miModal').style.display = 'none'; }
         
-        // Cierra el modal si haces clic fuera de la caja blanca
         window.onclick = function(event) {
             if (event.target == document.getElementById('miModal')) { cerrarModal(); }
         }
 
-        // Magia del autocompletado con Mensual y Anual
         function actualizarFormulario() {
             const selectApp = document.getElementById('appSelect');
             const selectCiclo = document.getElementById('cicloSelect');
@@ -173,14 +170,11 @@
 
             if (selectApp.value === "Otro") {
                 divNombre.style.display = 'flex';
-                // Si estaba lleno de una app anterior, lo borramos
                 if(!inputPrecio.value || opcionElegida.getAttribute('data-mensual')) {
                     inputPrecio.value = ''; 
                 }
             } else if (selectApp.value !== "") {
                 divNombre.style.display = 'none';
-                
-                // Ponemos el precio correcto según el ciclo
                 if (selectCiclo.value === "Mensual") {
                     inputPrecio.value = opcionElegida.getAttribute('data-mensual');
                 } else {
@@ -189,17 +183,14 @@
             }
         }
 
-        // Justo antes de enviar el formulario, decidimos qué nombre guardar
         function prepararEnvio() {
             const select = document.getElementById('appSelect');
             const nombreFinal = document.getElementById('nombreFinal');
             const inputPersonalizado = document.getElementById('nombreInput');
 
             if (select.value === "Otro") {
-                // Si eligió "Otro", guardamos lo que ha escrito en la caja de texto
                 nombreFinal.value = inputPersonalizado.value;
             } else {
-                // Si eligió una app predeterminada, guardamos su nombre
                 nombreFinal.value = select.value; 
             }
         }

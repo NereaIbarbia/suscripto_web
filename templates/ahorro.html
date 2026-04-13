@@ -3,37 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suscripto - Ahorros</title>
+    <title>Suscripto - {{ textos.ahorros }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="{% if modo_oscuro %}dark-mode{% endif %}">
     <div class="app-container" style="display: flex; height: 100vh; background-color: #f4f6f8;">
         <aside class="sidebar" style="width: 250px; background-color: #2c3e50; color: white; display: flex; flex-direction: column; padding-top: 2rem;">
             <h1 style="text-align: center; font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 3rem;">SUSCRIPTO</h1>
             <nav>
                 <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
-                    <li><a href="/" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🏠 Inicio</a></li>
-                    <li><a href="/calendario" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">📅 Calendario</a></li>
-                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/ahorro" style="text-decoration: none; color: #4CAF50; font-weight: 600; padding: 1rem 2rem; display: block;">🐷 Ahorros</a></li>
-                    <li><a href="/ajustes" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">⚙️ Ajustes</a></li>
+                    <li><a href="/" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">🏠 {{ textos.inicio }}</a></li>
+                    <li><a href="/calendario" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">📅 {{ textos.calendario }}</a></li>
+                    <li style="background-color: #34495e; border-left: 5px solid #4CAF50;"><a href="/ahorro" style="text-decoration: none; color: #4CAF50; font-weight: 600; padding: 1rem 2rem; display: block;">🐷 {{ textos.ahorros }}</a></li>
+                    <li><a href="/ajustes" style="text-decoration: none; color: #aeb6bf; padding: 1rem 2rem; display: block;">⚙️ {{ textos.ajustes }}</a></li>
                 </ul>
             </nav>
         </aside>
 
         <main style="flex: 1; padding: 2.5rem; overflow-y: auto;">
-            <h2 style="text-align: center; margin-bottom: 2rem; color: #2c3e50;">RESUMEN DE GASTOS</h2>
+            <h2 style="text-align: center; margin-bottom: 2rem; color: #2c3e50;">{{ textos.resumen_gastos }}</h2>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <div style="background: white; padding: 2.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <h3 style="color: #777; margin-bottom: 1rem;">Gasto Mensual Total</h3>
+                    <h3 style="color: #777; margin-bottom: 1rem;">{{ textos.gasto_mensual }}</h3>
                     <h2 style="font-size: 3.5rem; color: #2c3e50;">{{ total_gastado | convertir_precio }} {{ moneda }}</h2>
-                    <p style="color: #27ae60; margin-top: 1rem; font-weight: 600;">✓ Datos actualizados</p>
+                    <p style="color: #27ae60; margin-top: 1rem; font-weight: 600;">{{ textos.datos_actualizados }}</p>
                 </div>
 
                 <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center;">
-                    <h3 style="margin-bottom: 1.5rem; color: #555;">Distribución por Suscripción</h3>
+                    <h3 style="margin-bottom: 1.5rem; color: #555;">{{ textos.distribucion }}</h3>
                     <div style="width: 100%; max-width: 280px;">
                         <canvas id="miGrafica"></canvas>
                     </div>
@@ -43,11 +43,8 @@
     </div>
 
     <script>
-        // Extraemos los nombres
         const etiquetas = {{ suscripciones|map(attribute='nombre')|list|tojson }};
         
-        // ARREGLO MATEMÁTICO EN LA GRÁFICA:
-        // Pasamos los precios a la gráfica. Si es Anual, lo dividimos entre 12 para que sea justo
         const valores = [
             {% for sub in suscripciones %}
                 {% if sub.ciclo == 'Anual' %}
@@ -59,14 +56,12 @@
             {% endfor %}
         ];
 
-        // EXTRA DE REGALO: Extraemos tus colores oficiales de Python
         const coloresOficiales = [
             {% for sub in suscripciones %}
                 "{{ get_color(sub.nombre) }}"{% if not loop.last %},{% endif %}
             {% endfor %}
         ];
 
-        // Si hay datos para mostrar, generamos la gráfica
         if (etiquetas && etiquetas.length > 0) {
             const ctx = document.getElementById('miGrafica').getContext('2d');
             new Chart(ctx, {
@@ -75,7 +70,7 @@
                     labels: etiquetas,
                     datasets: [{
                         data: valores,
-                        backgroundColor: coloresOficiales, // ¡Ahora usa tus colores!
+                        backgroundColor: coloresOficiales,
                         hoverOffset: 10
                     }]
                 },

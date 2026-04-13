@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suscripto - Ajustes</title>
+    <title>Suscripto - {{ textos.ajustes }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="{% if modo_oscuro %}dark-mode{% endif %}">
     <div class="app-container">
         <aside class="sidebar">
             <h1 class="logo">SUSCRIPTO</h1>
             <nav>
                 <ul class="nav-menu">
                      <li class="nav-item"><a href="/">🏠 {{ textos.inicio }}</a></li>
-                    <li class="nav-item"><a href="/calendario">📅 Calendario</a></li>
-                    <li class="nav-item"><a href="/ahorro">🐷 Ahorros</a></li>
-                    <li class="nav-item active"><a href="/ajustes">⚙️ Ajustes</a></li>
+                    <li class="nav-item"><a href="/calendario">📅 {{ textos.calendario }}</a></li>
+                    <li class="nav-item"><a href="/ahorro">🐷 {{ textos.ahorros }}</a></li>
+                    <li class="nav-item active"><a href="/ajustes">⚙️ {{ textos.ajustes }}</a></li>
                 </ul>
             </nav>
         </aside>
@@ -27,13 +27,16 @@
             <form action="/ajustes" method="POST">
                 <div class="settings-grid">
                 <div class="card">
-                    <h3 class="card-title">ASPECTOS GRÁFICOS Y VISUALES</h3>
+                    <h3 class="card-title">{{ textos.aspectos_graficos }}</h3>
                     <div class="setting-row">
-                        <span>Modo Oscuro</span>
-                        <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                        <span>{{ textos.modo_oscuro }}</span>
+                        <label class="switch">
+                            <input type="checkbox" name="modo_oscuro" value="on" {% if modo_oscuro %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
                     </div>
                     <div class="setting-row">
-                        <span>Tema de Color</span>
+                        <span>{{ textos.tema_color }}</span>
                         <div class="color-picker">
                             <span class="color-dot" style="background: #7f8c8d; border: 2px solid #333;"></span>
                             <span class="color-dot" style="background: #3498db;"></span>
@@ -45,50 +48,50 @@
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">FUNCIONALIDADES</h3>
+                    <h3 class="card-title">{{ textos.funcionalidades }}</h3>
                     <div class="setting-row">
-                        <span>Notificaciones de Vencimiento</span>
+                        <span>{{ textos.noti_vencimiento }}</span>
                         <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
                     </div>
                     <div class="setting-row">
-                        <span>Recordatorios de Ahorro</span>
+                        <span>{{ textos.recordatorios }}</span>
                         <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">IDIOMA Y REGIÓN</h3>
+                    <h3 class="card-title">{{ textos.idioma_region }}</h3>
                     <div class="setting-row">
-                        <span>Idioma</span>
+                        <span>{{ textos.idioma }}</span>
                         <select class="form-input" onchange="cambiarIdioma(this.value)">
-                            <option value="es" {% if session.get('idioma','es') == 'es' %}selected{% endif %}>Español</option>
-                            <option value="en" {% if session.get('idioma','es') == 'en' %}selected{% endif %}>English</option>
+                            <option value="es" {% if session.get('idioma','es') == 'es' %}selected{% endif %}>{{ textos.espanol }}</option>
+                            <option value="en" {% if session.get('idioma','es') == 'en' %}selected{% endif %}>{{ textos.ingles }}</option>
                         </select>
                     </div>
                     <div class="setting-row">
-                        <span>Moneda</span>
+                        <span>{{ textos.moneda }}</span>
                         <select class="form-input" name="moneda">
-                            <option value="€" {% if moneda == '€' %}selected{% endif %}>Euro (€)</option>
-                            <option value="$" {% if moneda == '$' %}selected{% endif %}>Dólar ($)</option>
+                            <option value="€" {% if moneda == '€' %}selected{% endif %}>{{ textos.euro }}</option>
+                            <option value="$" {% if moneda == '$' %}selected{% endif %}>{{ textos.dolar }}</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">OTRAS CONFIGURACIONES</h3>
-                    <button class="btn-grey full-width mb-1">Gestionar Métodos de Pago</button>
-                    <button class="btn-grey full-width">Cerrar Sesión</button>
+                    <h3 class="card-title">{{ textos.otras_configs }}</h3>
+                    <button type="button" class="btn-grey full-width mb-1">{{ textos.gestionar_pagos }}</button>
+                    <button type="button" class="btn-grey full-width">{{ textos.cerrar_sesion }}</button>
                 </div>
             </div>
             <div class="text-center mt-2">
-                <button class="btn-grey">Guardar Cambios</button>
+                <button type="submit" class="btn-grey">{{ textos.guardar_cambios }}</button>
             </div>
         </form>
         </main>
     </div>
     <script>
         function cambiarIdioma(lang) {
-        window.location.href = "/ajustes?lang=" + lang;
+            window.location.href = "/ajustes?lang=" + lang;
         }
     </script>
 </body>
