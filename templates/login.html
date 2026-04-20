@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Suscripto - {{ textos.iniciar_sesion }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="{% if modo_oscuro %}dark-mode{% endif %}" style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #2c3e50;">
+    <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center;" class="card">
+        <h1 style="color: #4CAF50; margin-bottom: 2rem; letter-spacing: 2px;">SUSCRIPTO</h1>
+        <h2 style="color: #2c3e50; margin-bottom: 1.5rem;">{{ textos.iniciar_sesion }}</h2>
+        <form action="/login" method="POST" style="display: flex; flex-direction: column; gap: 1rem;">
+            <input type="email" name="email" placeholder="{{ textos.email }}" required class="form-input">
+            <input type="password" name="password" placeholder="{{ textos.contrasena }}" required class="form-input">
+            <button type="submit" class="btn-success" style="padding: 1rem; width: 100%;">{{ textos.entrar }}</button>
+        </form>
+        <p style="margin-top: 1.5rem; color: #777;">
+            <a href="/registro" style="color: #3498db; font-weight: bold; text-decoration: none;">{{ textos.registrarse }}</a>
+        </p>
+    </div>
+</body>
+</html>

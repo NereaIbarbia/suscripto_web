@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text 
+# NUEVO: Herramientas de seguridad para contraseñas
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -9,10 +11,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'clave_super_secreta_para_sesiones'
 db = SQLAlchemy(app)
 
-# Tasa de conversión de Euros a Dólares
 TASA_EUR_A_USD = 1.16
 
-# Diccionario completo de traducciones
+# He añadido unas cuantas palabras al diccionario para el Login y Registro
 TRADUCCIONES = {
     'es': {
         'inicio': 'Inicio', 'calendario': 'Calendario', 'ahorros': 'Ahorros', 'ajustes': 'Ajustes',
@@ -34,6 +35,8 @@ TRADUCCIONES = {
         'moneda': 'Moneda', 'otras_configs': 'OTRAS CONFIGURACIONES', 'gestionar_pagos': 'Gestionar Métodos de Pago',
         'cerrar_sesion': 'Cerrar Sesión', 'guardar_cambios': 'Guardar Cambios',
         'euro': 'Euro (€)', 'dolar': 'Dólar ($)',
+        'iniciar_sesion': 'Iniciar Sesión', 'registrarse': 'Registrarse', 'crear_cuenta': 'Crear Cuenta',
+        'email': 'Tu Email', 'contrasena': 'Tu Contraseña', 'entrar': 'ENTRAR',
         'meses': ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
         'dias': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
     },
@@ -57,32 +60,34 @@ TRADUCCIONES = {
         'moneda': 'Currency', 'otras_configs': 'OTHER SETTINGS', 'gestionar_pagos': 'Manage Payment Methods',
         'cerrar_sesion': 'Log Out', 'guardar_cambios': 'Save Changes',
         'euro': 'Euro (€)', 'dolar': 'Dollar ($)',
+        'iniciar_sesion': 'Log In', 'registrarse': 'Sign Up', 'crear_cuenta': 'Create Account',
+        'email': 'Your Email', 'contrasena': 'Your Password', 'entrar': 'ENTER',
         'meses': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
         'dias': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     }
 }
 
+# 1. MODELO DE USUARIOS
+class Usuario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    suscripciones = db.relationship('Suscripcion', backref='dueño', lazy=True)
+
+# 2. MODELO DE SUSCRIPCIONES ACTUALIZADO
 class Suscripcion(db.Model):
+    __tablename__ = 'suscripcion_privada' # Tabla nueva para evitar errores con la antigua
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     precio = db.Column(db.Float, nullable=False)
     fecha_cobro = db.Column(db.String(20), nullable=False) 
     ciclo = db.Column(db.String(20), nullable=False, default="Mensual") 
     autorenovacion = db.Column(db.Boolean, default=True)
+    # NUEVO: A quién pertenece
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
 
 with app.app_context():
     db.create_all()
-    try:
-        db.session.execute(text("ALTER TABLE suscripcion ADD COLUMN ciclo VARCHAR(20) DEFAULT 'Mensual';"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(text("ALTER TABLE suscripcion ADD COLUMN autorenovacion BOOLEAN DEFAULT TRUE;"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
 
 def obtener_color(nombre):
     n = nombre.lower()
@@ -104,10 +109,8 @@ def inject_configuracion():
     idioma_actual = session.get('idioma', 'es')
     textos = TRADUCCIONES.get(idioma_actual, TRADUCCIONES['es'])
     modo_oscuro = session.get('modo_oscuro', False)
-    
     return dict(moneda=moneda_actual, textos=textos, modo_oscuro=modo_oscuro)
 
-# Filtro para convertir moneda de euros a dólares
 @app.template_filter('convertir_precio')
 def convertir_precio(precio_base):
     try:
@@ -122,8 +125,54 @@ def convertir_precio(precio_base):
         precio_final = precio_base
     return f"{precio_final:.2f}"
 
+# --- RUTAS DE AUTENTICACIÓN ---
+
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        if Usuario.query.filter_by(email=email).first():
+            return "El email ya existe. <a href='/login'>Inicia sesión</a>."
+            
+        # Encriptamos la contraseña por seguridad
+        nuevo_usuario = Usuario(email=email, password=generate_password_hash(password))
+        db.session.add(nuevo_usuario)
+        db.session.commit()
+        return redirect(url_for('login'))
+        
+    return render_template('registro.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        usuario = Usuario.query.filter_by(email=email).first()
+        
+        if usuario and check_password_hash(usuario.password, password):
+            session['usuario_id'] = usuario.id
+            return redirect(url_for('index'))
+        else:
+            return "Email o contraseña incorrectos. <a href='/login'>Intentar de nuevo</a>."
+            
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('usuario_id', None)
+    return redirect(url_for('login'))
+
+
+# --- RUTAS PROTEGIDAS ---
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    mi_user_id = session['usuario_id']
+
     if request.method == 'POST':
         sub_id = request.form.get('sub_id')
         nombre = request.form.get('nombre_final') 
@@ -133,7 +182,7 @@ def index():
         es_auto = request.form.get('autorenovacion') == 'on'
         
         if sub_id:
-            sub_existente = Suscripcion.query.get(int(sub_id))
+            sub_existente = Suscripcion.query.filter_by(id=int(sub_id), usuario_id=mi_user_id).first()
             if sub_existente:
                 sub_existente.nombre = nombre
                 sub_existente.precio = float(precio)
@@ -141,35 +190,41 @@ def index():
                 sub_existente.ciclo = ciclo
                 sub_existente.autorenovacion = es_auto
         else:
-            nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo, autorenovacion=es_auto)
+            nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo, autorenovacion=es_auto, usuario_id=mi_user_id)
             db.session.add(nueva_sub)
             
         db.session.commit()
         return redirect(url_for('index'))
     
-    suscripciones = Suscripcion.query.all()
+    # Filtramos para que solo vea LAS SUYAS
+    suscripciones = Suscripcion.query.filter_by(usuario_id=mi_user_id).all()
     return render_template('index.html', suscripciones=suscripciones, get_color=obtener_color)
 
 @app.route('/borrar/<int:id>')
 def borrar(id):
-    sub = Suscripcion.query.get_or_404(id)
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    sub = Suscripcion.query.filter_by(id=id, usuario_id=session['usuario_id']).first_or_404()
     db.session.delete(sub)
     db.session.commit()
     return redirect(url_for('index'))
 
 @app.route('/calendario')
 def calendario():
-    suscripciones = Suscripcion.query.all()
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    suscripciones = Suscripcion.query.filter_by(usuario_id=session['usuario_id']).all()
     return render_template('calendario.html', suscripciones=suscripciones, get_color=obtener_color)
 
 @app.route('/ahorro')
 def ahorro():
-    suscripciones = Suscripcion.query.all()
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    suscripciones = Suscripcion.query.filter_by(usuario_id=session['usuario_id']).all()
     total_mensual = sum(sub.precio if sub.ciclo == 'Mensual' else (sub.precio / 12) for sub in suscripciones)
     return render_template('ahorro.html', suscripciones=suscripciones, total_gastado=total_mensual, get_color=obtener_color)
 
 @app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    
     lang = request.args.get('lang')
     if lang in TRADUCCIONES:
         session['idioma'] = lang 
@@ -180,10 +235,7 @@ def ajustes():
             session['moneda'] = nueva_moneda 
             
         modo_oscuro_form = request.form.get('modo_oscuro')
-        if modo_oscuro_form == 'on':
-            session['modo_oscuro'] = True
-        else:
-            session['modo_oscuro'] = False
+        session['modo_oscuro'] = (modo_oscuro_form == 'on')
         
         return redirect(url_for('ajustes')) 
     
