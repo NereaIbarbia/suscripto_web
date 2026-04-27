@@ -1,23 +1,35 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text 
+from flask_mail import Mail, Message
+from datetime import datetime, timedelta
+
 # NUEVO: Herramientas de seguridad para contraseñas
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.mwaizxcunhxxsryifdnb:Pedorreta123@aws-1-eu-west-1.pooler.supabase.com:6543/postgres'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.mwaizxcunhxxsryifdnb:Pedorreta123@aws-1-eu-west-1.pooler.supabase.com:5432/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'clave_super_secreta_para_sesiones'
 db = SQLAlchemy(app)
 
 TASA_EUR_A_USD = 1.16
 
-# DICCIONARIO ACTUALIZADO CON TODAS LAS TRADUCCIONES
+# --- CONFIGURACIÓN DE CORREO (GMAIL) ---
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'teamsuscripto@gmail.com'  # Cambia esto
+app.config['MAIL_PASSWORD'] = 'quer ogxz pkpx ybwv'  # Tu contraseña de aplicación de 16 letras
+mail = Mail(app)
+
+
+# He añadido unas cuantas palabras al diccionario para el Login y Registro
 TRADUCCIONES = {
     'es': {
         'inicio': 'Inicio', 'calendario': 'Calendario', 'ahorros': 'Ahorros', 'ajustes': 'Ajustes',
-        'mis_sripciones': 'Mis Suscripciones', 'anadir_nueva': '➕ Añadir Nueva',
+        'mis_suscripciones': 'Mis Suscripciones', 'anadir_nueva': '➕ Añadir Nueva',
         'nueva_suscripcion': 'Nueva Suscripción', 'editar_suscripcion': 'Editar Suscripción',
         'servicio': 'Servicio', 'elige_servicio': 'Elige un servicio...', 'otro_personalizado': '✏️ Otro (Personalizado)',
         'nombre_suscripcion': 'Nombre de la suscripción', 'ejemplo_nombre': 'Ej: Gimnasio, ChatGPT...',
@@ -38,13 +50,7 @@ TRADUCCIONES = {
         'iniciar_sesion': 'Iniciar Sesión', 'registrarse': 'Registrarse', 'crear_cuenta': 'Crear Cuenta',
         'email': 'Tu Email', 'contrasena': 'Tu Contraseña', 'entrar': 'ENTRAR',
         'meses': ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-        'dias': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-        'proyeccion_acumulada': 'Proyección Acumulada (1 Año)',
-        'top_gastos': 'Top Mayores Gastos',
-        'evalua_gastos': 'Evalúa si realmente usas estos servicios para maximizar tu ahorro.',
-        'gasto_acumulado': 'Gasto Acumulado',
-        'mes_texto': 'Mes',
-        'por_mes': '/mes'
+        'dias': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
     },
     'en': {
         'inicio': 'Home', 'calendario': 'Calendar', 'ahorros': 'Savings', 'ajustes': 'Settings',
@@ -69,13 +75,7 @@ TRADUCCIONES = {
         'iniciar_sesion': 'Log In', 'registrarse': 'Sign Up', 'crear_cuenta': 'Create Account',
         'email': 'Your Email', 'contrasena': 'Your Password', 'entrar': 'ENTER',
         'meses': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-        'dias': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        'proyeccion_acumulada': 'Accumulated Projection (1 Year)',
-        'top_gastos': 'Top Expenses',
-        'evalua_gastos': 'Evaluate if you really use these services to maximize your savings.',
-        'gasto_acumulado': 'Accumulated Expense',
-        'mes_texto': 'Month',
-        'por_mes': '/mo'
+        'dias': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     }
 }
 
@@ -110,9 +110,9 @@ def obtener_color(nombre):
     if 'disney' in n: return '#113ccf'
     if 'youtube' in n: return '#ff0000'
     if 'apple' in n: return '#000000'
-    if 'playstation' in n: return '#003791'
+    if 'playstation' in n or 'psn' in n: return '#003791'
     if 'xbox' in n: return '#107c10'
-    if 'gimnasio' in n: return '#e67e22'
+    if 'gimnasio' in n or 'gym' in n: return '#e67e22'
     return '#34495e'
 
 @app.context_processor
@@ -253,5 +253,41 @@ def ajustes():
     
     return render_template('ajustes.html')
 
+
+def enviar_recordatorios():
+    """Busca suscripciones que vencen mañana y envía email."""
+    with app.app_context():
+        # Calculamos la fecha de mañana en formato 'YYYY-MM-DD'
+        hoy = datetime.now()
+        manana = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        # Buscamos en la base de datos
+        pendientes = Suscripcion.query.filter_by(fecha_cobro=manana).all()
+        
+        emails_enviados = 0
+        for sub in pendientes:
+            usuario = Usuario.query.get(sub.usuario_id)
+            if usuario and usuario.email:
+                try:
+                    msg = Message(
+                        subject=f"🔔 Recordatorio Suscripto: {sub.nombre}",
+                        sender=app.config['MAIL_USERNAME'],
+                        recipients=[usuario.email]
+                    )
+                    msg.body = f"¡Hola!\n\nTe avisamos de que tu suscripción a '{sub.nombre}' se renovará mañana ({manana}) por un importe de {sub.precio}€.\n\n¡Que tengas un buen día!"
+                    mail.send(msg)
+                    emails_enviados += 1
+                except Exception as e:
+                    print(f"Error enviando a {usuario.email}: {e}")
+        
+        return f"Proceso finalizado. Correos enviados: {emails_enviados}"
+
+@app.route('/test-notificaciones')
+def test_notificaciones():
+    # Solo para que tú lo pruebes manualmente
+    resultado = enviar_recordatorios()
+    return f"<h1>Estado del envío:</h1><p>{resultado}</p>"
 if __name__ == '__main__':
     app.run(debug=True)
+
+
