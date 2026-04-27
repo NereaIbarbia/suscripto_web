@@ -4,12 +4,11 @@ from sqlalchemy import text
 from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 
-# NUEVO: Herramientas de seguridad para contraseñas
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.mwaizxcunhxxsryifdnb:Pedorreta123@aws-1-eu-west-1.pooler.supabase.com:5432/postgres'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.mwaizxcunhxxsryifdnb:Pedorreta123@aws-1-eu-west-1.pooler.supabase.com:6543/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'clave_super_secreta_para_sesiones'
 db = SQLAlchemy(app)
@@ -20,12 +19,10 @@ TASA_EUR_A_USD = 1.16
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'teamsuscripto@gmail.com'  # Cambia esto
-app.config['MAIL_PASSWORD'] = 'quer ogxz pkpx ybwv'  # Tu contraseña de aplicación de 16 letras
+app.config['MAIL_USERNAME'] = 'teamsuscripto@gmail.com'
+app.config['MAIL_PASSWORD'] = 'quer ogxz pkpx ybwv'
 mail = Mail(app)
 
-
-# He añadido unas cuantas palabras al diccionario para el Login y Registro
 TRADUCCIONES = {
     'es': {
         'inicio': 'Inicio', 'calendario': 'Calendario', 'ahorros': 'Ahorros', 'ajustes': 'Ajustes',
@@ -50,7 +47,18 @@ TRADUCCIONES = {
         'iniciar_sesion': 'Iniciar Sesión', 'registrarse': 'Registrarse', 'crear_cuenta': 'Crear Cuenta',
         'email': 'Tu Email', 'contrasena': 'Tu Contraseña', 'entrar': 'ENTRAR',
         'meses': ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-        'dias': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+        'dias': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+        'proyeccion_acumulada': 'Proyección Acumulada (1 Año)',
+        'top_gastos': 'Top Mayores Gastos',
+        'evalua_gastos': 'Evalúa si realmente usas estos servicios para maximizar tu ahorro.',
+        'gasto_acumulado': 'Gasto Acumulado',
+        'mes_texto': 'Mes',
+        'por_mes': '/mes',
+        'prueba_gratuita': '🎁 Tiene Prueba Gratuita (Free Trial)',
+        'duracion_prueba': 'Duración de la prueba',
+        'dias_7': '7 Días',
+        'dias_14': '14 Días',
+        'mes_1': '1 Mes'
     },
     'en': {
         'inicio': 'Home', 'calendario': 'Calendar', 'ahorros': 'Savings', 'ajustes': 'Settings',
@@ -58,7 +66,7 @@ TRADUCCIONES = {
         'nueva_suscripcion': 'New Subscription', 'editar_suscripcion': 'Edit Subscription',
         'servicio': 'Service', 'elige_servicio': 'Choose a service...', 'otro_personalizado': '✏️ Other (Custom)',
         'nombre_suscripcion': 'Subscription Name', 'ejemplo_nombre': 'Ex: Gym, ChatGPT...',
-        'ciclo': 'Cycle', 'mensual': 'Monthly', 'anual': 'Yearly',
+        'ciclo': 'Cycle', 'Mensual' : 'Monthly', 'anual': 'Yearly',
         'precio': 'Price', 'proximo_cobro': 'Next Billing', 'renovacion_automatica': '🔄 Auto-renewal',
         'guardar': 'SAVE', 'cobro': 'Billing', 'editar': '✏️ EDIT', 'borrar': '🗑️ DELETE',
         'confirmar_borrar': 'Are you sure you want to delete',
@@ -75,27 +83,35 @@ TRADUCCIONES = {
         'iniciar_sesion': 'Log In', 'registrarse': 'Sign Up', 'crear_cuenta': 'Create Account',
         'email': 'Your Email', 'contrasena': 'Your Password', 'entrar': 'ENTER',
         'meses': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-        'dias': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        'dias': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        'proyeccion_acumulada': 'Accumulated Projection (1 Year)',
+        'top_gastos': 'Top Expenses',
+        'evalua_gastos': 'Evaluate if you really use these services to maximize your savings.',
+        'gasto_acumulado': 'Accumulated Expense',
+        'mes_texto': 'Month',
+        'por_mes': '/mo',
+        'prueba_gratuita': '🎁 Has Free Trial',
+        'duracion_prueba': 'Trial Duration',
+        'dias_7': '7 Days',
+        'dias_14': '14 Days',
+        'mes_1': '1 Month'
     }
 }
 
-# 1. MODELO DE USUARIOS
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     suscripciones = db.relationship('Suscripcion', backref='dueño', lazy=True)
 
-# 2. MODELO DE SUSCRIPCIONES ACTUALIZADO
 class Suscripcion(db.Model):
-    __tablename__ = 'suscripcion_privada' # Tabla nueva para evitar errores con la antigua
+    __tablename__ = 'suscripcion_privada'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     precio = db.Column(db.Float, nullable=False)
     fecha_cobro = db.Column(db.String(20), nullable=False) 
     ciclo = db.Column(db.String(20), nullable=False, default="Mensual") 
     autorenovacion = db.Column(db.Boolean, default=True)
-    # NUEVO: A quién pertenece
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
 
 with app.app_context():
@@ -129,7 +145,6 @@ def convertir_precio(precio_base):
         precio_base = float(precio_base)
     except (ValueError, TypeError):
         precio_base = 0.0
-        
     moneda_actual = session.get('moneda', '€')
     if moneda_actual == '$':
         precio_final = precio_base * TASA_EUR_A_USD
@@ -137,23 +152,31 @@ def convertir_precio(precio_base):
         precio_final = precio_base
     return f"{precio_final:.2f}"
 
-# --- RUTAS DE AUTENTICACIÓN ---
+# --- FUNCIÓN MÁGICA PARA FREE TRIALS ---
+def actualizar_pruebas(usuario_id):
+    """Comprueba si alguna prueba gratuita ya ha caducado y la pasa a pago normal"""
+    hoy = datetime.now().strftime('%Y-%m-%d')
+    subs = Suscripcion.query.filter_by(usuario_id=usuario_id).all()
+    cambios = False
+    for sub in subs:
+        if sub.ciclo.startswith('Prueba ') and sub.fecha_cobro <= hoy:
+            sub.ciclo = sub.ciclo.replace('Prueba ', '')
+            cambios = True
+    if cambios:
+        db.session.commit()
 
+# --- RUTAS DE AUTENTICACIÓN ---
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        
         if Usuario.query.filter_by(email=email).first():
             return "El email ya existe. <a href='/login'>Inicia sesión</a>."
-            
-        # Encriptamos la contraseña por seguridad
         nuevo_usuario = Usuario(email=email, password=generate_password_hash(password))
         db.session.add(nuevo_usuario)
         db.session.commit()
         return redirect(url_for('login'))
-        
     return render_template('registro.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -161,15 +184,12 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        
         usuario = Usuario.query.filter_by(email=email).first()
-        
         if usuario and check_password_hash(usuario.password, password):
             session['usuario_id'] = usuario.id
             return redirect(url_for('index'))
         else:
             return "Email o contraseña incorrectos. <a href='/login'>Intentar de nuevo</a>."
-            
     return render_template('login.html')
 
 @app.route('/logout')
@@ -177,13 +197,13 @@ def logout():
     session.pop('usuario_id', None)
     return redirect(url_for('login'))
 
-
 # --- RUTAS PROTEGIDAS ---
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if 'usuario_id' not in session: return redirect(url_for('login'))
     mi_user_id = session['usuario_id']
+    
+    actualizar_pruebas(mi_user_id)
 
     if request.method == 'POST':
         sub_id = request.form.get('sub_id')
@@ -192,6 +212,7 @@ def index():
         fecha = request.form.get('fecha_cobro')
         ciclo = request.form.get('ciclo') 
         es_auto = request.form.get('autorenovacion') == 'on'
+        es_prueba = request.form.get('es_prueba') == 'true'
         
         if sub_id:
             sub_existente = Suscripcion.query.filter_by(id=int(sub_id), usuario_id=mi_user_id).first()
@@ -202,13 +223,13 @@ def index():
                 sub_existente.ciclo = ciclo
                 sub_existente.autorenovacion = es_auto
         else:
-            nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo, autorenovacion=es_auto, usuario_id=mi_user_id)
+            ciclo_final = f"Prueba {ciclo}" if es_prueba else ciclo
+            nueva_sub = Suscripcion(nombre=nombre, precio=float(precio), fecha_cobro=fecha, ciclo=ciclo_final, autorenovacion=es_auto, usuario_id=mi_user_id)
             db.session.add(nueva_sub)
             
         db.session.commit()
         return redirect(url_for('index'))
     
-    # Filtramos para que solo vea LAS SUYAS
     suscripciones = Suscripcion.query.filter_by(usuario_id=mi_user_id).all()
     return render_template('index.html', suscripciones=suscripciones, get_color=obtener_color)
 
@@ -223,47 +244,43 @@ def borrar(id):
 @app.route('/calendario')
 def calendario():
     if 'usuario_id' not in session: return redirect(url_for('login'))
+    actualizar_pruebas(session['usuario_id'])
     suscripciones = Suscripcion.query.filter_by(usuario_id=session['usuario_id']).all()
     return render_template('calendario.html', suscripciones=suscripciones, get_color=obtener_color)
 
 @app.route('/ahorro')
 def ahorro():
     if 'usuario_id' not in session: return redirect(url_for('login'))
+    actualizar_pruebas(session['usuario_id'])
     suscripciones = Suscripcion.query.filter_by(usuario_id=session['usuario_id']).all()
-    total_mensual = sum(sub.precio if sub.ciclo == 'Mensual' else (sub.precio / 12) for sub in suscripciones)
+    
+    total_mensual = sum(
+        0 if sub.ciclo.startswith('Prueba') else (sub.precio if sub.ciclo == 'Mensual' else sub.precio / 12) 
+        for sub in suscripciones
+    )
+    
     return render_template('ahorro.html', suscripciones=suscripciones, total_gastado=total_mensual, get_color=obtener_color)
 
 @app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
     if 'usuario_id' not in session: return redirect(url_for('login'))
-    
     lang = request.args.get('lang')
     if lang in TRADUCCIONES:
         session['idioma'] = lang 
-        
     if request.method == 'POST':
         nueva_moneda = request.form.get('moneda')
         if nueva_moneda:
             session['moneda'] = nueva_moneda 
-            
         modo_oscuro_form = request.form.get('modo_oscuro')
         session['modo_oscuro'] = (modo_oscuro_form == 'on')
-        
         return redirect(url_for('ajustes')) 
-    
     return render_template('ajustes.html')
 
-
 def enviar_recordatorios():
-    """Busca suscripciones que vencen mañana y envía email."""
     with app.app_context():
-        # Calculamos la fecha de mañana en formato 'YYYY-MM-DD'
         hoy = datetime.now()
         manana = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
-        
-        # Buscamos en la base de datos
         pendientes = Suscripcion.query.filter_by(fecha_cobro=manana).all()
-        
         emails_enviados = 0
         for sub in pendientes:
             usuario = Usuario.query.get(sub.usuario_id)
@@ -279,15 +296,12 @@ def enviar_recordatorios():
                     emails_enviados += 1
                 except Exception as e:
                     print(f"Error enviando a {usuario.email}: {e}")
-        
         return f"Proceso finalizado. Correos enviados: {emails_enviados}"
 
 @app.route('/test-notificaciones')
 def test_notificaciones():
-    # Solo para que tú lo pruebes manualmente
     resultado = enviar_recordatorios()
     return f"<h1>Estado del envío:</h1><p>{resultado}</p>"
+
 if __name__ == '__main__':
     app.run(debug=True)
-
-
